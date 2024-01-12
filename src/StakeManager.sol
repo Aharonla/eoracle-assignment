@@ -3,8 +3,8 @@ pragma solidity >=0.8.23;
 
 import {IStakeManager} from "./IStakeManager.sol";
 
-contract StakeManager is IStakeManager {
-    function setConfiguration(uint256 registrationDepositAmount, uint256 registrationWaitTime) external {}
+    uint public registrationDepositAmount;
+    uint public registrationWaitTime;
 
     function register() external payable {}
 
