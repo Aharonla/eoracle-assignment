@@ -11,9 +11,33 @@ import {StakeManager} from "../src/StakeManager.sol";
 contract StakeManagerTest is PRBTest, StdCheats {
     StakeManager internal stakeManager;
 
+    event SetConfiguration(uint indexed amount, uint indexed time);
+
+    error notOwner();
+
     /// @dev A function invoked before each test case is run.
     function setUp() public virtual {
         // Instantiate the contract-under-test.
         stakeManager = new StakeManager();
+    }
+
+    /// @dev Test correct call to setConfiguration
+    function test_SetConfiguration() public {
+        uint registrationDepositAmount = 10;
+        uint registrationWaitTime = 100;
+        assertEq(stakeManager.registrationDepositAmount(), 0);
+        assertEq(stakeManager.registrationWaitTime(), 0);
+        vm.expectEmit(true, true, false, false);
+        emit SetConfiguration(registrationDepositAmount, registrationWaitTime);
+        stakeManager.setConfiguration(registrationDepositAmount, registrationWaitTime);
+        assertEq(stakeManager.registrationDepositAmount(), registrationDepositAmount);
+        assertEq(stakeManager.registrationWaitTime(), registrationWaitTime);
+    }
+
+    /// @dev Test failure in case of setConfiguration called by non-owner
+    function test_RevertWhen_NotOwner() public {
+        vm.expectRevert(notOwner);
+        vm.prank(address(0));
+        stakeManager.setConfiguration(1, 1);
     }
 }
