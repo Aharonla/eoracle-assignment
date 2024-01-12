@@ -11,9 +11,11 @@ import {StakeManager} from "../src/StakeManager.sol";
 contract StakeManagerTest is PRBTest, StdCheats {
     StakeManager internal stakeManager;
 
+    bytes32 public constant DEFAULT_ADMIN_ROLE = 0x00;
+
     event SetConfiguration(uint indexed amount, uint indexed time);
 
-    error notOwner();
+    error AccessControlUnauthorizedAccount(address account, bytes32 neededRole);
 
     /// @dev A function invoked before each test case is run.
     function setUp() public virtual {
@@ -36,8 +38,10 @@ contract StakeManagerTest is PRBTest, StdCheats {
 
     /// @dev Test failure in case of setConfiguration called by non-owner
     function test_RevertWhen_NotOwner() public {
-        vm.expectRevert(notOwner);
-        vm.prank(address(0));
+        vm.expectRevert(
+            abi.encodeWithSelector(AccessControlUnauthorizedAccount.selector, address(1), DEFAULT_ADMIN_ROLE)
+        );
+        vm.prank(address(1));
         stakeManager.setConfiguration(1, 1);
     }
 }
