@@ -8,9 +8,23 @@ contract StakeManager is IStakeManager, AccessControl {
     uint public registrationDepositAmount;
     uint public registrationWaitTime;
 
+    event SetConfiguration(uint indexed amount, uint indexed time);
+
     constructor() {
         _grantRole(DEFAULT_ADMIN_ROLE, _msgSender());
     }
+
+    function setConfiguration(
+        uint256 _registrationDepositAmount, 
+        uint256 _registrationWaitTime
+        ) 
+        external
+        onlyRole(DEFAULT_ADMIN_ROLE) {
+            registrationDepositAmount = _registrationDepositAmount;
+            registrationWaitTime = _registrationWaitTime;
+            emit SetConfiguration(_registrationDepositAmount, _registrationWaitTime);
+        }
+
     function register() external payable {}
 
     function unregister() external {}
