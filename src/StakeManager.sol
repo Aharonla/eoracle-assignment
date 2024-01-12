@@ -2,10 +2,15 @@
 pragma solidity >=0.8.23;
 
 import {IStakeManager} from "./IStakeManager.sol";
+import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
 
+contract StakeManager is IStakeManager, AccessControl {
     uint public registrationDepositAmount;
     uint public registrationWaitTime;
 
+    constructor() {
+        _grantRole(DEFAULT_ADMIN_ROLE, _msgSender());
+    }
     function register() external payable {}
 
     function unregister() external {}
