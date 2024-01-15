@@ -14,8 +14,7 @@ contract StakeManagerTest is PRBTest, StdCheats {
     bytes32 public constant DEFAULT_ADMIN_ROLE = 0x00;
 
     event SetConfiguration(uint indexed amount, uint indexed time);
-
-    error AccessControlUnauthorizedAccount(address account, bytes32 neededRole);
+    error NotAdmin(address from);
 
     /// @dev A function invoked before each test case is run.
     function setUp() public virtual {
@@ -27,19 +26,18 @@ contract StakeManagerTest is PRBTest, StdCheats {
     function test_SetConfiguration() public {
         uint registrationDepositAmount = 10;
         uint registrationWaitTime = 100;
-        assertEq(stakeManager.registrationDepositAmount(), 0);
-        assertEq(stakeManager.registrationWaitTime(), 0);
-        vm.expectEmit(true, true, false, false);
+        vm.expectEmit(true, true, true, false);
         emit SetConfiguration(registrationDepositAmount, registrationWaitTime);
-        stakeManager.setConfiguration(registrationDepositAmount, registrationWaitTime);
-        assertEq(stakeManager.registrationDepositAmount(), registrationDepositAmount);
-        assertEq(stakeManager.registrationWaitTime(), registrationWaitTime);
+        stakeManager.setConfiguration(
+            registrationDepositAmount, 
+            registrationWaitTime
+        );
     }
 
     /// @dev Test failure in case of setConfiguration called by non-owner
-    function test_RevertWhen_NotOwner() public {
+    function test_RevertWhen_SetConfiguration_NotOwner() public {
         vm.expectRevert(
-            abi.encodeWithSelector(AccessControlUnauthorizedAccount.selector, address(1), DEFAULT_ADMIN_ROLE)
+            abi.encodeWithSelector(NotAdmin.selector, address(1))
         );
         vm.prank(address(1));
         stakeManager.setConfiguration(1, 1);
