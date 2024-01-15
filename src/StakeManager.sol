@@ -31,7 +31,25 @@ contract StakeManager is IStakeManager, AccessControl {
             emit SetConfiguration(_registrationDepositAmount, _registrationWaitTime);
         }
 
-    function register() external payable {}
+    /**
+    * @dev Registers a user as staker
+    * Restrictions:
+    * - msg.value should equal `_registrationDepositAmount`
+    */
+    function register()
+    external 
+    payable 
+    CheckRegistrationAmount
+    {
+        stakers[_msgSender()].stakeTime = block.timestamp;
+        stakers[_msgSender()].stake += msg.value;
+        _grantRole(STAKER_ROLE, _msgSender());
+        emit Register(
+            stakers[_msgSender()].stakeTime,
+            stakers[_msgSender()].stake,
+            STAKER_ROLE
+        );
+    }
 
     function unregister() external {}
 
