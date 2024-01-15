@@ -14,12 +14,18 @@ contract StakeManager is IStakeManager, AccessControl {
         _grantRole(DEFAULT_ADMIN_ROLE, _msgSender());
     }
 
+    /**
+    * @dev Used by admin to control state parameters
+    * @param _registrationDepositAmount: Amount required to register as staker
+    * @param _registrationWaitTime: Cooldown period for slashed stakers
+    */
     function setConfiguration(
-        uint256 _registrationDepositAmount, 
-        uint256 _registrationWaitTime
+        uint _registrationDepositAmount, 
+        uint _registrationWaitTime
         ) 
         external
-        onlyRole(DEFAULT_ADMIN_ROLE) {
+    onlyAdmin 
+    {
             registrationDepositAmount = _registrationDepositAmount;
             registrationWaitTime = _registrationWaitTime;
             emit SetConfiguration(_registrationDepositAmount, _registrationWaitTime);

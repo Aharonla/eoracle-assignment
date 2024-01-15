@@ -2,6 +2,10 @@
 pragma solidity >=0.8.23;
 
 interface IStakeManager {
+    /**
+    * @dev Emitted after setting protocol configurations
+    */
+    event SetConfiguration(uint indexed amount, uint indexed time);
  /**
  * @dev Allows an admin to set the configuration of the staking contract.
  * @param registrationDepositAmount Initial registration deposit amount in wei.
