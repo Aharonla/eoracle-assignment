@@ -20,6 +20,7 @@ contract StakeManagerTest is PRBTest, StdCheats {
     event Unregister(uint indexed stake);
     event RoleRevoked(bytes32 indexed role, address indexed account, address indexed sender);
     event Stake(uint indexed stake);
+    event Unstake(uint indexed stake);
     error NotAdmin(address from);
     error IncorrectAmountSent();
     error NotStaker(address caller);
@@ -260,5 +261,72 @@ contract StakeManagerTest is PRBTest, StdCheats {
                 )
             );
             stakeManager.stake{value: 100}();
+        }
+
+        function test_Unstake() public payable {
+            uint registrationDepositAmount = 100;
+            uint registrationWaitTime = 3600;
+            stakeManager.setConfiguration(
+                registrationDepositAmount,
+                registrationWaitTime
+            );
+            stakeManager.register{value: registrationDepositAmount}();
+            stakeManager.stake{value: 100}();
+            uint balanceBefore = address(this).balance;
+            vm.expectEmit(true, false, false, false);
+            emit Unstake(100);
+            stakeManager.unstake(100);
+            assertEq(address(this).balance, balanceBefore + 100);
+        }
+
+        function test_RevertWhen_Unstake_NotStaker() public payable {
+            uint registrationDepositAmount = 100;
+            uint registrationWaitTime = 3600;
+            stakeManager.setConfiguration(
+                registrationDepositAmount,
+                registrationWaitTime
+            );
+            stakeManager.register{value: registrationDepositAmount}();
+            stakeManager.stake{value: 100}();
+            stakeManager.unregister();
+            vm.expectRevert(
+                abi.encodeWithSelector(NotStaker.selector, address(this))
+            );
+            stakeManager.unstake(100);
+        }
+
+        function test_RevertWhen_Unstake_RestrictedStaker() public payable {
+            uint registrationDepositAmount = 100;
+            uint registrationWaitTime = 3600;
+            stakeManager.setConfiguration(
+                registrationDepositAmount,
+                registrationWaitTime
+            );
+            stakeManager.register{value: registrationDepositAmount}();
+            stakeManager.stake{value: 100}();
+            stakeManager.slash(address(this), registrationDepositAmount);
+            vm.expectRevert(Restricted.selector);
+            stakeManager.unstake(100);
+        }
+
+        function test_RevertWhen_Unstake_NotEnoughFunds() public payable {
+            uint registrationDepositAmount = 100;
+            uint registrationWaitTime = 3600;
+            stakeManager.setConfiguration(
+                registrationDepositAmount,
+                registrationWaitTime
+            );
+            stakeManager.addRole("NEW_ROLE");
+            stakeManager.register{value: registrationDepositAmount}();
+            stakeManager.claimRole("NEW_ROLE");
+            vm.expectRevert(
+                abi.encodeWithSelector(
+                    NotEnoughFunds.selector, 
+                    address(this), 
+                    100, 
+                    0
+                )
+            );
+            stakeManager.unstake(100);
         }
 
