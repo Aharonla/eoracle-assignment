@@ -83,7 +83,7 @@ interface IStakeManager {
     * @param registrationWaitTime The duration a staker must wait after initiating registration.
     */
     function setConfiguration(
-       uint256 registrationDepositAmount, 
+       uint128 registrationDepositAmount, 
        uint64 registrationWaitTime
        ) external;
 
@@ -118,14 +118,14 @@ function claimRole(bytes32 _role) external;
     /**
     * @dev Allows registered stakers to unstake their ether from the contract.
     */
-    function unstake(uint256 _amount) external;
+    function unstake(uint128 _amount) external;
 
     /**
     * @dev Allows an admin to slash a portion of the staked ether of a given staker.
     * @param staker The address of the staker to be slashed.
     * @param amount The amount of ether to be slashed from the staker.
     */
-    function slash(address staker, uint256 amount) external;
+    function slash(address staker, uint128 amount) external;
 
       /**
     * @dev used to withdraw all slashed funds from the contract

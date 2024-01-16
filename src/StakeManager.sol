@@ -3,6 +3,7 @@ pragma solidity >=0.8.23;
 
 import { IStakeManager } from "./IStakeManager.sol";
 import { Roles } from "./Roles.sol";
+import { SafeCast } from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 
 
 contract StakeManager is IStakeManager, Roles {
@@ -13,7 +14,7 @@ contract StakeManager is IStakeManager, Roles {
     * numRoles: Number of roles the staker has, to control permitted number of roles by `stake`  
     */
     struct StakerInfo {
-        uint256 stake;
+        uint128 stake;
         uint64 cooldown;
         uint8 numRoles;
     }
@@ -65,7 +66,7 @@ contract StakeManager is IStakeManager, Roles {
     * @param _registrationWaitTime: Cooldown period for slashed stakers
     */
     function setConfiguration(
-        uint256 _registrationDepositAmount, 
+        uint128 _registrationDepositAmount, 
         uint64 _registrationWaitTime
     ) 
     external
@@ -86,7 +87,7 @@ contract StakeManager is IStakeManager, Roles {
     payable 
     CheckRegistrationAmount
     {
-        stakers[_msgSender()].stake += msg.value;
+        stakers[_msgSender()].stake += SafeCast.toUint128(msg.value);
         _grantRole(STAKER_ROLE, _msgSender());
         emit Register(stakers[_msgSender()].stake);
     }
@@ -152,7 +153,7 @@ contract StakeManager is IStakeManager, Roles {
     * - Only stakers can call
     */
     function stake() external payable onlyStaker {
-        stakers[_msgSender()].stake += msg.value;
+        stakers[_msgSender()].stake += SafeCast.toUint128(msg.value);
         emit Stake(msg.value);
     }
 
@@ -167,7 +168,7 @@ contract StakeManager is IStakeManager, Roles {
     * If last restriction is not met, staker should call `renounceRole` 
     * to reduce the number of roles until unstaking is possible
     */
-    function unstake(uint256 _amount) external onlyStaker NotRestricted {
+    function unstake(uint128 _amount) external onlyStaker NotRestricted {
         if (
             stakers[_msgSender()].numRoles * registrationDepositAmount > (stakers[_msgSender()].stake - _amount)
         ) {
@@ -192,7 +193,7 @@ contract StakeManager is IStakeManager, Roles {
     * - Only admin can call
     * - `amount` is higher than or equal the staker's funds
     */
-    function slash(address staker, uint256 amount) external onlyAdmin {
+    function slash(address staker, uint128 amount) external onlyAdmin {
         if (stakers[staker].stake < amount) {
             revert NotEnoughFunds(
                 staker,
