@@ -22,3 +22,20 @@ Stakers should deposit an amount `registrationDepositAmount` on first registrati
 
 ## Upgradability
 - Contracts will be deployed using openZeppelin's `upgradable`
+
+
+# Implementaion conclusions
+
+## Configuration Management
+
+### AccessControl approach
+
+Initial approach of using AccessControl needs some modification, as openZeppelin's AccessControl contract allows coupling an address to any role, and doesn't restrict the roles.  
+A `Roles.sol` contract will expand the functionality of `AccessControl` to make such restriction possible.
+
+This approach imposes another problem - AccessControl's `grantRole` function demands that the role can be granted by `roleAdmin` only.
+A staker can be granted `STAKER_ROLE`, and `STAKER_ROLE` can be added as `roleAdmin` for each `allowedRole`, but this means that a staker can grant any role to anyone infinately.
+
+A partial solution will be to impose that `claimRole` grants the chosen role to `msg.sender`, and `grantRole` will be overriden to have no functionality. To disallow infinite self-grants (not clear in the specs if this is desired or not).
+
+
