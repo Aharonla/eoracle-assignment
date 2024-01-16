@@ -16,8 +16,12 @@ contract StakeManagerTest is PRBTest, StdCheats {
 
     event SetConfiguration(uint indexed amount, uint indexed time);
     event Register(uint indexed stakeTime, uint indexed stake, bytes32 role);
+    event RoleGranted(bytes32 indexed role, address indexed account, address indexed sender);
     error NotAdmin(address from);
     error IncorrectAmountSent();
+    error NotStaker(address caller);
+    error RoleNotAllowed(bytes32 role);
+    error Restricted();
 
     /// @dev A function invoked before each test case is run.
     function setUp() public virtual {
@@ -72,4 +76,105 @@ contract StakeManagerTest is PRBTest, StdCheats {
         vm.expectRevert(IncorrectAmountSent.selector);
         stakeManager.register{value: registrationDepositAmount + 1}();
     }
+
+    function test_ClaimRole() public payable {
+        uint registrationDepositAmount = 100;
+        uint registrationWaitTime = 3600;
+        stakeManager.setConfiguration(
+            registrationDepositAmount, 
+            registrationWaitTime
+        );
+        bytes32 newRole = "NEW_ROLE";
+        stakeManager.addRole("NEW_ROLE");
+        stakeManager.register{value: registrationDepositAmount}();
+        vm.expectEmit(true, true, false, false);
+        emit RoleGranted(newRole, address(this), address(this));
+        stakeManager.claimRole("NEW_ROLE");
+        }
+
+        function test_RevertWhen_ClaimRole_NotStaker() public payable {
+            uint registrationDepositAmount = 100;
+            uint registrationWaitTime = 3600;
+            stakeManager.setConfiguration(
+                registrationDepositAmount, 
+                registrationWaitTime
+            );
+            stakeManager.addRole("NEW_ROLE");
+            vm.expectRevert(
+                abi.encodeWithSelector(NotStaker.selector, address(this))
+            );
+            stakeManager.claimRole("NEW_ROLE");
+        }
+
+        function test_RevertWhen_ClaimRole_NoExistingRole() public payable {
+            uint registrationDepositAmount = 100;
+            uint registrationWaitTime = 3600;
+            bytes32 newRole = "NEW_ROLE";
+            stakeManager.setConfiguration(
+                registrationDepositAmount, 
+                registrationWaitTime
+            );
+            stakeManager.register{value: registrationDepositAmount}();
+            vm.expectRevert(
+                abi.encodeWithSelector(RoleNotAllowed.selector, newRole)
+            );
+            stakeManager.claimRole("NEW_ROLE");
+        }
+
+        function test_RevertWhen_ClaimRole_RestrictedStaker() public payable {
+            uint registrationDepositAmount = 100;
+            uint registrationWaitTime = 3600;
+            stakeManager.setConfiguration(
+                registrationDepositAmount, 
+                registrationWaitTime
+            );
+            stakeManager.addRole("NEW_ROLE");
+            stakeManager.register{value: registrationDepositAmount}();
+            stakeManager.slash(address(this), registrationDepositAmount);
+            vm.expectRevert(Restricted.selector);
+            stakeManager.claimRole("NEW_ROLE");
+        }
+        
+        function test_RevertWhen_ClaimRole_NotEnoughFunds() public payable {
+            uint registrationDepositAmount = 100;
+            uint registrationWaitTime = 3600;
+            stakeManager.setConfiguration(
+                registrationDepositAmount, 
+                registrationWaitTime
+            );
+            stakeManager.addRole("NEW_ROLE");
+            stakeManager.addRole("SECOND_ROLE");
+            stakeManager.register{value: registrationDepositAmount}();
+            stakeManager.claimRole("NEW_ROLE");
+            vm.expectRevert(
+                abi.encodeWithSelector(
+                    NotEnoughFunds.selector, 
+                    address(this), 
+                    2 * registrationDepositAmount, 
+                    registrationDepositAmount
+                    )
+            );
+            stakeManager.claimRole("SECOND_ROLE");
+        }
+        
+        function test_RevertWhen_ClaimRole_StakerHasRole() public payable {
+            uint registrationDepositAmount = 100;
+            uint registrationWaitTime = 3600;
+            stakeManager.setConfiguration(
+                registrationDepositAmount, 
+                registrationWaitTime
+            );
+            bytes32 newRole = "NEW_ROLE";
+            stakeManager.addRole("NEW_ROLE");
+            stakeManager.register{value: registrationDepositAmount}();
+            stakeManager.claimRole("NEW_ROLE");
+            vm.expectRevert(
+                abi.encodeWithSelector(
+                    StakerRoleClaimed.selector,
+                    address(this),
+                    newRole
+                    )
+            );
+            stakeManager.claimRole("NEW_ROLE");
+        }
 
