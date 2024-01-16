@@ -2,6 +2,7 @@
 pragma solidity >=0.8.23;
 
 import { IStakeManager } from "./IStakeManager.sol";
+import { Roles } from "./Roles.sol";
 
 
 contract StakeManager is IStakeManager, Roles {
@@ -39,6 +40,25 @@ contract StakeManager is IStakeManager, Roles {
         }
         _;
     }
+
+    /**
+    * @dev Enforces slashed staker restriction
+    */
+    modifier NotRestricted() {
+        if (stakers[_msgSender()].cooldown > block.timestamp) {
+            revert Restricted();
+        }
+        _;
+    }
+
+    /**
+    * @dev Controls access to functions allowed only for staker role
+    */
+    modifier onlyStaker() {
+        if (!hasRole(STAKER_ROLE, _msgSender())) {
+            revert NotStaker(_msgSender());
+        }
+        _;
     }
 
     /**
@@ -78,11 +98,41 @@ contract StakeManager is IStakeManager, Roles {
         );
     }
 
-    function unregister() external {}
+    /**
+    * @dev used by stakers to claim roles
+    * @param _role the role's "name" (Should be fixed length (bytes32),
+    * and by convention is an upper-cased underscored string)
+    * Restrictions:
+    * - Can be accessed only by stakers
+    * - `_role` should be permitted by manager
+    * - Calling staker can not be in cooldown period
+    * - Staker has not claimed `_role` before
+    * - Staker has enough staked funds to claim another role
+    */
+    function claimRole(bytes32 _role) 
+    external
+    onlyStaker
+    existingRole(_role)
+    NotRestricted
+    {
+        if (hasRole(_role, _msgSender())) {
+            revert StakerRoleClaimed(_msgSender(), _role);
+        }
+        if (
+            (stakers[_msgSender()].numRoles + 1) * registrationDepositAmount 
+            > 
+            stakers[_msgSender()].stake
+        ) {
+            revert NotEnoughFunds(
+                _msgSender(),
+                (stakers[_msgSender()].numRoles + 1) * registrationDepositAmount,
+                stakers[_msgSender()].stake
+            );
+        }
+        stakerRoles[_msgSender()][stakers[_msgSender()].numRoles] = _role;
+        stakers[_msgSender()].numRoles++;
+        _grantRole(_role, _msgSender());
+        emit RoleClaimed(_msgSender(), _role);
+    }
 
-    function stake() external payable {}
-
-    function unstake() external {}
-
-    function slash(address staker, uint256 amount) external {}
 }
