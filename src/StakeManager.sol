@@ -190,4 +190,27 @@ contract StakeManager is IStakeManager, Roles {
         payable(_msgSender()).transfer(_amount);
     }
 
+    /**
+    * @dev Used to penalize a staker by slashing part or all of their staked funds
+    * The penalty also involves a cooldown period, restricting staker's actions
+    * @param staker The penalized staker
+    * @param amount The amount of funds to slash
+    * Restrictions:
+    * - Only admin can call
+    * - `amount` is higher than or equal the staker's funds
+    */
+    function slash(address staker, uint amount) external onlyAdmin {
+        if (stakers[staker].stake < amount) {
+            revert NotEnoughFunds(
+                _msgSender(),
+                amount,
+                stakers[_msgSender()].stake
+            );
+        }
+        stakers[staker].stake -= amount;
+        stakers[staker].cooldown = uint(block.timestamp) + registrationWaitTime;
+        slashedFunds += amount;
+        emit Slash(staker, amount, stakers[staker].cooldown);
+    }
+
 }

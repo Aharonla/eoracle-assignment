@@ -30,6 +30,13 @@ interface IStakeManager {
     */
     event Unstake(uint indexed stake);
 
+    /**
+    * @dev Emitted when staker is penalized
+    * @param staker The penalized staker 
+    * @param amount Amount slashed from stake
+    * @param cooldown End of cooldown period
+    */
+    event Slash(address indexed staker, uint indexed amount, uint indexed cooldown);
 
     /**
     * @dev Emitted when a staker claims a role
@@ -111,5 +118,5 @@ function claimRole(bytes32 _role) external;
  * @param staker The address of the staker to be slashed.
  * @param amount The amount of ether to be slashed from the staker.
  */
- function slash(address staker, uint256 amount) external;
+    function slash(address staker, uint amount) external;
 }
