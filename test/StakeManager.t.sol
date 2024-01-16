@@ -40,29 +40,27 @@ contract StakeManagerTest is PRBTest, StdCheats {
     }
 
     /// @dev Test correct call to setConfiguration
-    function test_SetConfiguration() public {
-        uint256 registrationDepositAmount = 10;
-        uint64 registrationWaitTime = 100;
+    function test_SetConfiguration(uint256 amount, uint64 time) public {
         vm.expectEmit(true, true, true, false);
-        emit SetConfiguration(registrationDepositAmount, registrationWaitTime);
+        emit SetConfiguration(amount, time);
         stakeManager.setConfiguration(
-            registrationDepositAmount, 
-            registrationWaitTime
+            amount, 
+            time
         );
     }
 
     /// @dev Test failure in case of setConfiguration called by non-owner
-    function test_RevertWhen_SetConfiguration_NotOwner() public {
+    function test_RevertWhen_SetConfiguration_NotOwner(address notAdmin) public {
+        vm.assume(notAdmin != address(this));
         vm.expectRevert(
-            abi.encodeWithSelector(NotAdmin.selector, address(1))
+            abi.encodeWithSelector(NotAdmin.selector, notAdmin)
         );
-        vm.prank(address(1));
+        vm.prank(notAdmin);
         stakeManager.setConfiguration(1, 1);
     }
 
 
     /// @dev Test correct call to register
-
     function test_Register() public payable {
         uint256 registrationDepositAmount = 100;
         uint64 registrationWaitTime = 3600;
@@ -76,15 +74,17 @@ contract StakeManagerTest is PRBTest, StdCheats {
         assertEq(address(stakeManager).balance, registrationDepositAmount);
     }
 
-    function test_RevertWhen_Register_WrongAmountSent() public payable {
+    function test_RevertWhen_Register_WrongAmountSent(uint256 amount) public payable {
         uint256 registrationDepositAmount = 100;
         uint64 registrationWaitTime = 3600;
         stakeManager.setConfiguration(
             registrationDepositAmount, 
             registrationWaitTime
         );
+        vm.assume(amount != registrationDepositAmount);
+        vm.assume(amount < address(this).balance);
         vm.expectRevert(IncorrectAmountSent.selector);
-        stakeManager.register{value: registrationDepositAmount + 1}();
+        stakeManager.register{value: amount}();
     }
 
     function test_ClaimRole() public payable {
@@ -102,7 +102,7 @@ contract StakeManagerTest is PRBTest, StdCheats {
         stakeManager.claimRole("NEW_ROLE");
         }
 
-        function test_RevertWhen_ClaimRole_NotStaker() public payable {
+        function test_RevertWhen_ClaimRole_NotStaker(address sender, address staker) public payable {
             uint256 registrationDepositAmount = 100;
             uint64 registrationWaitTime = 3600;
             stakeManager.setConfiguration(
@@ -110,8 +110,14 @@ contract StakeManagerTest is PRBTest, StdCheats {
                 registrationWaitTime
             );
             stakeManager.addRole("NEW_ROLE");
+            vm.assume(sender != staker);
+            vm.prank(staker);
+            vm.deal(staker, registrationDepositAmount);
+            stakeManager.register{value: registrationDepositAmount}();
+            vm.stopPrank();
+            vm.prank(sender);
             vm.expectRevert(
-                abi.encodeWithSelector(NotStaker.selector, address(this))
+                abi.encodeWithSelector(NotStaker.selector, sender)
             );
             stakeManager.claimRole("NEW_ROLE");
         }
@@ -131,37 +137,41 @@ contract StakeManagerTest is PRBTest, StdCheats {
             stakeManager.claimRole("NEW_ROLE");
         }
 
-        function test_RevertWhen_ClaimRole_RestrictedStaker() public payable {
+        function test_RevertWhen_ClaimRole_RestrictedStaker(uint64 time) public payable {
             uint256 registrationDepositAmount = 100;
             uint64 registrationWaitTime = 3600;
             stakeManager.setConfiguration(
                 registrationDepositAmount, 
                 registrationWaitTime
             );
+            vm.assume(time < registrationWaitTime);
             stakeManager.addRole("NEW_ROLE");
             stakeManager.register{value: registrationDepositAmount}();
             stakeManager.slash(address(this), registrationDepositAmount);
             vm.expectRevert(Restricted.selector);
+            vm.warp(block.timestamp + time);
             stakeManager.claimRole("NEW_ROLE");
         }
         
-        function test_RevertWhen_ClaimRole_NotEnoughFunds() public payable {
+        function test_RevertWhen_ClaimRole_NotEnoughFunds(uint256 amount) public payable {
             uint256 registrationDepositAmount = 100;
             uint64 registrationWaitTime = 3600;
             stakeManager.setConfiguration(
                 registrationDepositAmount, 
                 registrationWaitTime
             );
+            vm.assume(amount < registrationDepositAmount);
             stakeManager.addRole("NEW_ROLE");
             stakeManager.addRole("SECOND_ROLE");
             stakeManager.register{value: registrationDepositAmount}();
+            stakeManager.stake{value: amount}();
             stakeManager.claimRole("NEW_ROLE");
             vm.expectRevert(
                 abi.encodeWithSelector(
                     NotEnoughFunds.selector, 
                     address(this), 
                     2 * registrationDepositAmount, 
-                    registrationDepositAmount
+                    registrationDepositAmount + amount
                     )
             );
             stakeManager.claimRole("SECOND_ROLE");
@@ -199,6 +209,7 @@ contract StakeManagerTest is PRBTest, StdCheats {
             stakeManager.addRole("NEW_ROLE");
             stakeManager.register{value: registrationDepositAmount}();
             stakeManager.claimRole(newRole);
+            uint256 oldBalance = address(this).balance;
             vm.expectEmit(true, false, false, false);
             emit RoleRevoked(newRole, address(stakeManager), address(this));
             vm.expectEmit(true, true, false, false);
@@ -206,11 +217,13 @@ contract StakeManagerTest is PRBTest, StdCheats {
             vm.expectEmit(true, true, false, false);
             emit Unregister(registrationDepositAmount);
             stakeManager.unregister();
+            assertEq(address(this).balance, oldBalance + registrationDepositAmount);
         }
 
-        function test_RevertWhen_Unregister_RestrictedStaker() public payable {
+        function test_RevertWhen_Unregister_RestrictedStaker(uint64 time) public payable {
             uint256 registrationDepositAmount = 100;
             uint64 registrationWaitTime = 3600;
+            vm.assume(time < registrationWaitTime);
             stakeManager.setConfiguration(
                 registrationDepositAmount, 
                 registrationWaitTime
@@ -220,23 +233,30 @@ contract StakeManagerTest is PRBTest, StdCheats {
             stakeManager.register{value: registrationDepositAmount}();
             stakeManager.slash(address(this), registrationDepositAmount);
             vm.expectRevert(Restricted.selector);
+            vm.warp(block.timestamp + time);
             stakeManager.unregister();
         }
         
-        function test_RevertWhen_Unregister_NotStaker() public payable {
+        function test_RevertWhen_Unregister_NotStaker(address staker, address sender) public payable {
             uint256 registrationDepositAmount = 100;
             uint64 registrationWaitTime = 3600;
+            vm.assume(staker != sender);
             stakeManager.setConfiguration(
                 registrationDepositAmount, 
                 registrationWaitTime
             );
             stakeManager.addRole("NEW_ROLE");
             stakeManager.addRole("SECOND_ROLE");
-            vm.expectRevert(abi.encodeWithSelector(NotStaker.selector, address(this)));
+            vm.deal(staker, registrationDepositAmount);
+            vm.prank(staker);
+            stakeManager.register{value: registrationDepositAmount}();
+            vm.stopPrank();
+            vm.prank(sender);
+            vm.expectRevert(abi.encodeWithSelector(NotStaker.selector, sender));
             stakeManager.unregister();
         }
 
-        function test_Stake() public payable {
+        function test_Stake(uint256 amount) public payable {
             uint256 registrationDepositAmount = 100;
             uint64 registrationWaitTime = 3600;
             stakeManager.setConfiguration(
@@ -244,25 +264,35 @@ contract StakeManagerTest is PRBTest, StdCheats {
                 registrationWaitTime
             );
             stakeManager.register{value: registrationDepositAmount}();
+            vm.assume(amount <= address(this).balance);
             vm.expectEmit(true, false, false, false);
-            emit Stake(100);
-            stakeManager.stake{value: 100}();
+            emit Stake(amount);
+            stakeManager.stake{value: amount}();
         }
         
-        function test_RevertWhen_Stake_NotStaker() public payable {
+        function test_RevertWhen_Stake_NotStaker(address staker, address sender, uint256 amount) public payable {
+            vm.assume(staker != sender);
             uint256 registrationDepositAmount = 100;
             uint64 registrationWaitTime = 3600;
+            vm.assume(amount < type(uint256).max - registrationDepositAmount);
             stakeManager.setConfiguration(
                 registrationDepositAmount, 
                 registrationWaitTime
             );
+            vm.prank(staker);
+            vm.deal(staker, registrationDepositAmount);
+            stakeManager.register{value: registrationDepositAmount}();
+            vm.stopPrank();
+            vm.prank(sender);
+            vm.deal(sender, amount);
+            console2.log(amount);
             vm.expectRevert(
                 abi.encodeWithSelector(
                     NotStaker.selector, 
-                    address(this)
+                    sender
                 )
             );
-            stakeManager.stake{value: 100}();
+            stakeManager.stake{value: amount}();
         }
 
         function test_Unstake() public payable {
@@ -281,25 +311,30 @@ contract StakeManagerTest is PRBTest, StdCheats {
             assertEq(address(this).balance, balanceBefore + 100);
         }
 
-        function test_RevertWhen_Unstake_NotStaker() public payable {
+        function test_RevertWhen_Unstake_NotStaker(address staker, address sender, uint256 amount) public payable {
+            vm.assume(staker != sender);
             uint256 registrationDepositAmount = 100;
             uint64 registrationWaitTime = 3600;
             stakeManager.setConfiguration(
                 registrationDepositAmount,
                 registrationWaitTime
             );
+            vm.startPrank(staker);
+            vm.deal(staker, registrationDepositAmount + 100);
             stakeManager.register{value: registrationDepositAmount}();
             stakeManager.stake{value: 100}();
-            stakeManager.unregister();
+            vm.stopPrank();
+            vm.prank(sender);
             vm.expectRevert(
-                abi.encodeWithSelector(NotStaker.selector, address(this))
+                abi.encodeWithSelector(NotStaker.selector, sender)
             );
             stakeManager.unstake(100);
         }
 
-        function test_RevertWhen_Unstake_RestrictedStaker() public payable {
+        function test_RevertWhen_Unstake_RestrictedStaker(uint64 time) public payable {
             uint256 registrationDepositAmount = 100;
             uint64 registrationWaitTime = 3600;
+            vm.assume(time < registrationWaitTime);
             stakeManager.setConfiguration(
                 registrationDepositAmount,
                 registrationWaitTime
@@ -307,13 +342,15 @@ contract StakeManagerTest is PRBTest, StdCheats {
             stakeManager.register{value: registrationDepositAmount}();
             stakeManager.stake{value: 100}();
             stakeManager.slash(address(this), registrationDepositAmount);
+            vm.warp(block.timestamp + time);
             vm.expectRevert(Restricted.selector);
             stakeManager.unstake(100);
         }
 
-        function test_RevertWhen_Unstake_NotEnoughFunds() public payable {
+        function test_RevertWhen_Unstake_NotEnoughFunds(uint amount) public payable {
             uint256 registrationDepositAmount = 100;
             uint64 registrationWaitTime = 3600;
+            vm.assume(amount < registrationDepositAmount && amount != 0);
             stakeManager.setConfiguration(
                 registrationDepositAmount,
                 registrationWaitTime
@@ -325,53 +362,65 @@ contract StakeManagerTest is PRBTest, StdCheats {
                 abi.encodeWithSelector(
                     NotEnoughFunds.selector, 
                     address(this), 
-                    100, 
+                    amount, 
                     0
                 )
             );
-            stakeManager.unstake(100);
+            stakeManager.unstake(amount);
         }
 
-        function test_Slash() public payable {
+        function test_Slash(address staker, uint256 amount, uint64 time) public payable {
             uint256 registrationDepositAmount = 100;
-            uint64 registrationWaitTime = 3600;
+            vm.assume(time < type(uint64).max - block.timestamp);
+            uint64 registrationWaitTime = time;
+            vm.assume(amount <= registrationDepositAmount);
+            vm.assume(staker != address(this));
             stakeManager.setConfiguration(
                 registrationDepositAmount,
                 registrationWaitTime
             );
+            vm.deal(staker, registrationDepositAmount);
+            vm.prank(staker);
             stakeManager.register{value: registrationDepositAmount}();
             vm.expectEmit(true, true, true, false);
-            emit Slash(address(this), 50, block.timestamp + 3600);
-            stakeManager.slash(address(this), uint(50));
+            emit Slash(staker, amount, block.timestamp + time);
+            stakeManager.slash(staker, amount);
         }
 
-        function test_RevertWhen_Slash_NotAdmin() public payable {
+        function test_RevertWhen_Slash_NotAdmin(address sender, address staker) public payable {
+            vm.assume(sender != address(this));
             uint256 registrationDepositAmount = 100;
             uint64 registrationWaitTime = 3600;
             stakeManager.setConfiguration(
                 registrationDepositAmount,
                 registrationWaitTime
             );
+            vm.deal(staker, registrationDepositAmount);
+            vm.prank(staker);
             stakeManager.register{value: registrationDepositAmount}();
             vm.expectRevert(
-                abi.encodeWithSelector(NotAdmin.selector, address(1))
+                abi.encodeWithSelector(NotAdmin.selector, sender)
             );
-            vm.prank(address(1));
-            stakeManager.slash(address(this), 50);
+            vm.prank(sender);
+            stakeManager.slash(staker, 50);
         }
 
-        function test_revertWhen_Slash_NotEnoughFunds() public payable {
+        function test_revertWhen_Slash_NotEnoughFunds(uint256 amount, address staker) public payable {
             uint256 registrationDepositAmount = 100;
             uint64 registrationWaitTime = 3600;
             stakeManager.setConfiguration(
                 registrationDepositAmount,
                 registrationWaitTime
             );
+            vm.assume(amount > registrationDepositAmount);
+            vm.deal(staker, registrationDepositAmount);
+            vm.prank(staker);
             stakeManager.register{value: registrationDepositAmount}();
+            vm.stopPrank();
             vm.expectRevert(
-                abi.encodeWithSelector(NotEnoughFunds.selector, address(this), 101, 100)
+                abi.encodeWithSelector(NotEnoughFunds.selector, staker, amount, registrationDepositAmount)
             );
-            stakeManager.slash(address(this), 101);
+            stakeManager.slash(staker, amount);
         }
 
         function test_Withdraw() public payable {
@@ -388,5 +437,25 @@ contract StakeManagerTest is PRBTest, StdCheats {
             emit Withdraw(50);
             stakeManager.withdraw();
             assertEq(address(this).balance, balanceBefore + 50);
+        }
+
+        function test_RevertWhen_Withdraw_NotAdmin(address sender, address staker, uint256 amount) public payable {
+            uint256 registrationDepositAmount = 100;
+            uint64 registrationWaitTime = 3600;
+            stakeManager.setConfiguration(
+                registrationDepositAmount,
+                registrationWaitTime
+            );
+            vm.assume(staker != address(this) && staker != sender);
+            vm.assume(sender != address(this));
+            vm.assume(amount <= registrationDepositAmount);
+            vm.deal(staker, registrationDepositAmount);
+            vm.prank(staker);
+            stakeManager.register{value: registrationDepositAmount}();
+            vm.stopPrank();
+            stakeManager.slash(staker, amount);
+            vm.prank(sender);
+            vm.expectRevert(abi.encodeWithSelector(NotAdmin.selector, sender));
+            stakeManager.withdraw();
         }
 }
