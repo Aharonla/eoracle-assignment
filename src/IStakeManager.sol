@@ -6,6 +6,11 @@ interface IStakeManager {
     * @dev Emitted after setting protocol configurations
     */
     event SetConfiguration(uint indexed amount, uint indexed time);
+
+    /** 
+    * @dev Emitted after registering as staker
+    */
+    event Register(uint indexed stakeTime, uint indexed stake, bytes32 role);
  /**
  * @dev Allows an admin to set the configuration of the staking contract.
  * @param registrationDepositAmount Initial registration deposit amount in wei.

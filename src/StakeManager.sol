@@ -1,17 +1,44 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity >=0.8.23;
 
-import {IStakeManager} from "./IStakeManager.sol";
-import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
+import { IStakeManager } from "./IStakeManager.sol";
 
-contract StakeManager is IStakeManager, AccessControl {
-    uint public registrationDepositAmount;
-    uint public registrationWaitTime;
 
-    event SetConfiguration(uint indexed amount, uint indexed time);
+contract StakeManager is IStakeManager, Roles {
+    /**
+    * @dev Stores staker's info:
+    * stakeTime: The time of the last stake
+    * stake: All of the staker's staked funds
+    * cooldown: For penalized stakers, a cooldown period until staker rights can be used
+    * numRoles: Number of roles the staker has, to control permitted number of roles by `stake`  
+    */
+    struct StakerInfo {
+        uint stakeTime;
+        uint stake;
+        uint cooldown;
+        uint8 numRoles;
+    }
 
-    constructor() {
-        _grantRole(DEFAULT_ADMIN_ROLE, _msgSender());
+    uint private registrationDepositAmount;
+    uint private registrationWaitTime;
+    uint private slashedFunds;
+    mapping (address staker => StakerInfo info) private stakers;
+    /**
+    * @dev Stores the staker's roles by index (iMax = stakers[staker].numRoles) 
+    * to allow revoking roles iteratively once staker unregisters.
+    */
+    mapping (address staker => mapping(uint index => bytes32 role)) private stakerRoles;
+
+
+    /**
+    * @dev Enforces `registrationDepositAmount` for new stakers registration.
+    */
+    modifier CheckRegistrationAmount() {
+        if (msg.value != registrationDepositAmount) {
+            revert IncorrectAmountSent();
+        }
+        _;
+    }
     }
 
     /**
