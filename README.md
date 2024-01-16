@@ -26,4 +26,4 @@ An example of a deployed and verified contract can be found at https://mumbai.po
 
 ## Smart contract interface documentation:
 
-See [StakeManager](/StakeManager.md), [Roles](/Roles.md)
+See [StakeManager](/StakeManager.md), [Roles](/Roles.md) for full smart contract documentation (generated from solidity natSpec).
