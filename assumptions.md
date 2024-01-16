@@ -37,5 +37,3 @@ This approach imposes another problem - AccessControl's `grantRole` function dem
 A staker can be granted `STAKER_ROLE`, and `STAKER_ROLE` can be added as `roleAdmin` for each `allowedRole`, but this means that a staker can grant any role to anyone infinately.
 
 A partial solution will be to impose that `claimRole` grants the chosen role to `msg.sender`, and `grantRole` will be overriden to have no functionality. To disallow infinite self-grants (not clear in the specs if this is desired or not).
-
-

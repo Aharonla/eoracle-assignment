@@ -80,7 +80,7 @@ contract StakeManager is IStakeManager, Roles {
 
     /**
     * @dev Registers a user as staker
-    * Restrictions:
+    * @notice Restrictions:
     * - msg.value should equal `_registrationDepositAmount`
     */
     function register()
@@ -102,7 +102,7 @@ contract StakeManager is IStakeManager, Roles {
     * @dev used by stakers to claim roles
     * @param _role the role's "name" (Should be fixed length (bytes32),
     * and by convention is an upper-cased underscored string)
-    * Restrictions:
+    * @notice Restrictions:
     * - Can be accessed only by stakers
     * - `_role` should be permitted by manager
     * - Calling staker can not be in cooldown period
@@ -137,7 +137,7 @@ contract StakeManager is IStakeManager, Roles {
 
     /**
     * @dev used to renounce all roles (including `staker`) and get staked funds refunded
-    * Restrictions:
+    * @notice Restrictions:
     * - Callable only by stakers
     * - Calling staker can not be in cooldown period
     */
@@ -155,7 +155,7 @@ contract StakeManager is IStakeManager, Roles {
 
     /** 
     * @dev used to add staked funds by staker
-    * Restrictions:
+    * @notice Restrictions:
     * - Only stakers can call
     */
     function stake() external payable onlyStaker {
@@ -166,7 +166,7 @@ contract StakeManager is IStakeManager, Roles {
     /**
     * @dev used to withdraw staked funds by staker
     * @param _amount Amount of funds to withdraw
-    * Restrictions:
+    * @notice Restrictions:
     * - Only stakers can call
     * - Staker should not be in cooldown period
     * - Staker can not withdraw if 
@@ -195,7 +195,7 @@ contract StakeManager is IStakeManager, Roles {
     * The penalty also involves a cooldown period, restricting staker's actions
     * @param staker The penalized staker
     * @param amount The amount of funds to slash
-    * Restrictions:
+    * @notice Restrictions:
     * - Only admin can call
     * - `amount` is higher than or equal the staker's funds
     */
@@ -215,7 +215,7 @@ contract StakeManager is IStakeManager, Roles {
 
     /**
     * @dev used to withdraw all slashed funds from the contract
-    * Restrictions:
+    * @notice Restrictions:
     * - Callable only by admin
     */
     function withdraw() external payable onlyAdmin {
