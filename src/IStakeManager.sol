@@ -13,6 +13,11 @@ interface IStakeManager {
     event Register(uint indexed stakeTime, uint indexed stake, bytes32 role);
 
     /**
+    * @dev Emitted after staker unregistering from the protocol
+    * @param stake The amount withrawn by the exiting staker
+    */
+    event Unregister(uint indexed stake);
+
 
     /**
     * @dev Emitted when a staker claims a role

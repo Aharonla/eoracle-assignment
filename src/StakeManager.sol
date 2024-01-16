@@ -135,4 +135,22 @@ contract StakeManager is IStakeManager, Roles {
         emit RoleClaimed(_msgSender(), _role);
     }
 
+    /**
+    * @dev used to renounce all roles (including `staker`) and get staked funds refunded
+    * Restrictions:
+    * - Callable only by stakers
+    * - Calling staker can not be in cooldown period
+    */
+    function unregister() external payable onlyStaker NotRestricted {
+        uint returnValue = stakers[_msgSender()].stake;
+        for (uint i; i < stakers[_msgSender()].numRoles; i++) {
+            renounceRole(stakerRoles[_msgSender()][i], _msgSender());
+            delete(stakerRoles[_msgSender()][i]);
+        }
+        renounceRole(STAKER_ROLE, _msgSender());
+        delete(stakers[_msgSender()]);
+        emit Unregister(returnValue);
+        payable(_msgSender()).transfer(returnValue);
+    }
+
 }
