@@ -12,7 +12,7 @@ interface IStakeManager {
     */
     event Register(uint indexed stakeTime, uint indexed stake, bytes32 role);
 
-    /**
+    /** 
     * @dev Emitted after staker unregistering from the protocol
     * @param stake The amount withrawn by the exiting staker
     */
@@ -46,6 +46,12 @@ interface IStakeManager {
     event RoleClaimed(address staker, bytes32 role);
 
     /**
+    * @dev Emitted when admin withdraws the slashed funds
+    * @param amount The withdraw amount
+    */
+    event Withdraw(uint amount);
+
+    /**
     * @dev Incorrect ether amount sent to register. Should be `registrationDepositAmount`
     */
     error IncorrectAmountSent();
@@ -70,20 +76,20 @@ interface IStakeManager {
     */
     error StakerRoleClaimed(address staker, bytes32 role);
 
- /**
- * @dev Allows an admin to set the configuration of the staking contract.
- * @param registrationDepositAmount Initial registration deposit amount in wei.
- * @param registrationWaitTime The duration a staker must wait after initiating registration.
- */
+    /**
+    * @dev Allows an admin to set the configuration of the staking contract.
+    * @param registrationDepositAmount Initial registration deposit amount in wei.
+    * @param registrationWaitTime The duration a staker must wait after initiating registration.
+    */
     function setConfiguration(
        uint256 registrationDepositAmount, 
        uint registrationWaitTime
        ) external;
 
- /**
- * @dev Allows an account to register as a staker.
- */
- function register() external payable;
+    /**
+    * @dev Allows an account to register as a staker.
+    */
+    function register() external payable;
 
     /**
     * @dev used by stakers to claim roles
@@ -98,25 +104,32 @@ interface IStakeManager {
     */
 function claimRole(bytes32 _role) external;
 
- /**
- * @dev Allows a registered staker to unregister and exit the staking system.
- */
+    /**
+    * @dev Allows a registered staker to unregister and exit the staking system.
+    */
     function unregister() external payable;
 
- /**
- * @dev Allows registered stakers to stake ether into the contract.
- */
- function stake() external payable;
+    /**
+    * @dev Allows registered stakers to stake ether into the contract.
+    */
+    function stake() external payable;
 
- /**
- * @dev Allows registered stakers to unstake their ether from the contract.
- */
+    /**
+    * @dev Allows registered stakers to unstake their ether from the contract.
+    */
     function unstake(uint _amount) external;
 
- /**
- * @dev Allows an admin to slash a portion of the staked ether of a given staker.
- * @param staker The address of the staker to be slashed.
- * @param amount The amount of ether to be slashed from the staker.
- */
+    /**
+    * @dev Allows an admin to slash a portion of the staked ether of a given staker.
+    * @param staker The address of the staker to be slashed.
+    * @param amount The amount of ether to be slashed from the staker.
+    */
     function slash(address staker, uint amount) external;
+
+      /**
+    * @dev used to withdraw all slashed funds from the contract
+    * Restrictions:
+    * - Callable only by admin
+    */
+    function withdraw() external payable;
 }

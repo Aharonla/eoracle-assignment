@@ -69,14 +69,14 @@ contract StakeManager is IStakeManager, Roles {
     function setConfiguration(
         uint _registrationDepositAmount, 
         uint _registrationWaitTime
-        ) 
-        external
+    ) 
+    external
     onlyAdmin 
     {
-            registrationDepositAmount = _registrationDepositAmount;
-            registrationWaitTime = _registrationWaitTime;
-            emit SetConfiguration(_registrationDepositAmount, _registrationWaitTime);
-        }
+        registrationDepositAmount = _registrationDepositAmount;
+        registrationWaitTime = _registrationWaitTime;
+        emit SetConfiguration(_registrationDepositAmount, _registrationWaitTime);
+    }
 
     /**
     * @dev Registers a user as staker
@@ -213,4 +213,15 @@ contract StakeManager is IStakeManager, Roles {
         emit Slash(staker, amount, stakers[staker].cooldown);
     }
 
+    /**
+    * @dev used to withdraw all slashed funds from the contract
+    * Restrictions:
+    * - Callable only by admin
+    */
+    function withdraw() external payable onlyAdmin {
+        uint returnValue = slashedFunds;
+        slashedFunds = 0;
+        emit Withdraw(returnValue);
+        payable(_msgSender()).transfer(returnValue);
+    }
 }
