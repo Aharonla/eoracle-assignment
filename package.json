@@ -34,6 +34,9 @@
     "prettier:write": "prettier --write **/*.{json,md,yml} --ignore-path=.prettierignore",
     "test": "forge test",
     "test:coverage": "forge coverage",
-    "test:coverage:report": "forge coverage --report lcov && genhtml lcov.info --branch-coverage --output-dir coverage"
+    "test:coverage:report": "forge coverage --report lcov && genhtml lcov.info --branch-coverage --output-dir coverage",
+    "deploy": "forge script script/Deploy.s.sol:Deploy --rpc-url ${MUMBAI_RPC_URL} --broadcast",
+    "deploy:verify": "forge script script/Deploy.s.sol:Deploy --rpc-url ${MUMBAI_RPC_URL} --broadcast --verify",
+    "address": "grep contractAddress ./broadcast/Deploy.s.sol/80001/run-latest.json -m 1 > latestAddress.txt"
   }
 }
