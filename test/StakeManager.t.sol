@@ -21,6 +21,7 @@ contract StakeManagerTest is PRBTest, StdCheats {
     event RoleRevoked(bytes32 indexed role, address indexed account, address indexed sender);
     event Stake(uint indexed stake);
     event Unstake(uint indexed stake);
+    event Slash(address indexed staker, uint indexed amount, uint indexed cooldown);
     error NotAdmin(address from);
     error IncorrectAmountSent();
     error NotStaker(address caller);
@@ -328,5 +329,47 @@ contract StakeManagerTest is PRBTest, StdCheats {
                 )
             );
             stakeManager.unstake(100);
+        }
+
+        function test_Slash() public payable {
+            uint registrationDepositAmount = 100;
+            uint registrationWaitTime = 3600;
+            stakeManager.setConfiguration(
+                registrationDepositAmount,
+                registrationWaitTime
+            );
+            stakeManager.register{value: registrationDepositAmount}();
+            vm.expectEmit(true, true, true, false);
+            emit Slash(address(this), 50, block.timestamp + 3600);
+            stakeManager.slash(address(this), uint(50));
+        }
+
+        function test_RevertWhen_Slash_NotAdmin() public payable {
+            uint registrationDepositAmount = 100;
+            uint registrationWaitTime = 3600;
+            stakeManager.setConfiguration(
+                registrationDepositAmount,
+                registrationWaitTime
+            );
+            stakeManager.register{value: registrationDepositAmount}();
+            vm.expectRevert(
+                abi.encodeWithSelector(NotAdmin.selector, address(1))
+            );
+            vm.prank(address(1));
+            stakeManager.slash(address(this), 50);
+        }
+
+        function test_revertWhen_Slash_NotEnoughFunds() public payable {
+            uint registrationDepositAmount = 100;
+            uint registrationWaitTime = 3600;
+            stakeManager.setConfiguration(
+                registrationDepositAmount,
+                registrationWaitTime
+            );
+            stakeManager.register{value: registrationDepositAmount}();
+            vm.expectRevert(
+                abi.encodeWithSelector(NotEnoughFunds.selector, address(this), 101, 100)
+            );
+            stakeManager.slash(address(this), 101);
         }
 
