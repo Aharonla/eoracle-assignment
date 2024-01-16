@@ -8,20 +8,18 @@ import { Roles } from "./Roles.sol";
 contract StakeManager is IStakeManager, Roles {
     /**
     * @dev Stores staker's info:
-    * stakeTime: The time of the last stake
     * stake: All of the staker's staked funds
     * cooldown: For penalized stakers, a cooldown period until staker rights can be used
     * numRoles: Number of roles the staker has, to control permitted number of roles by `stake`  
     */
     struct StakerInfo {
-        uint stakeTime;
         uint stake;
-        uint cooldown;
+        uint64 cooldown;
         uint8 numRoles;
     }
 
     uint private registrationDepositAmount;
-    uint private registrationWaitTime;
+    uint64 private registrationWaitTime;
     uint private slashedFunds;
     mapping (address staker => StakerInfo info) private stakers;
     /**
@@ -68,7 +66,7 @@ contract StakeManager is IStakeManager, Roles {
     */
     function setConfiguration(
         uint _registrationDepositAmount, 
-        uint _registrationWaitTime
+        uint64 _registrationWaitTime
     ) 
     external
     onlyAdmin 
@@ -88,14 +86,9 @@ contract StakeManager is IStakeManager, Roles {
     payable 
     CheckRegistrationAmount
     {
-        stakers[_msgSender()].stakeTime = block.timestamp;
         stakers[_msgSender()].stake += msg.value;
         _grantRole(STAKER_ROLE, _msgSender());
-        emit Register(
-            stakers[_msgSender()].stakeTime,
-            stakers[_msgSender()].stake,
-            STAKER_ROLE
-        );
+        emit Register(stakers[_msgSender()].stake);
     }
 
     /**
@@ -208,7 +201,7 @@ contract StakeManager is IStakeManager, Roles {
             );
         }
         stakers[staker].stake -= amount;
-        stakers[staker].cooldown = uint(block.timestamp) + registrationWaitTime;
+        stakers[staker].cooldown = uint64(block.timestamp) + registrationWaitTime;
         slashedFunds += amount;
         emit Slash(staker, amount, stakers[staker].cooldown);
     }
