@@ -16,7 +16,7 @@ uint256 private registrationDepositAmount;
 ### registrationWaitTime
 
 ```solidity
-uint256 private registrationWaitTime;
+uint64 private registrationWaitTime;
 ```
 
 
@@ -43,8 +43,8 @@ to allow revoking roles iteratively once staker unregisters.*
 mapping(address staker => mapping(uint256 index => bytes32 role)) private stakerRoles;
 ```
 
+## Modifiers
 
-## Functions
 ### CheckRegistrationAmount
 
 *Enforces `registrationDepositAmount` for new stakers registration.*
@@ -72,20 +72,22 @@ modifier NotRestricted();
 modifier onlyStaker();
 ```
 
+## Functions
+
 ### setConfiguration
 
 *Used by admin to control state parameters*
 
 
 ```solidity
-function setConfiguration(uint256 _registrationDepositAmount, uint256 _registrationWaitTime) external onlyAdmin;
+function setConfiguration(uint256 _registrationDepositAmount, uint64 _registrationWaitTime) external onlyAdmin;
 ```
 **Parameters**
 
 |Name|Type|Description|
 |----|----|-----------|
 |`_registrationDepositAmount`|`uint256`||
-|`_registrationWaitTime`|`uint256`||
+|`_registrationWaitTime`|`uint64`||
 
 
 ### register
@@ -206,7 +208,6 @@ function withdraw() external payable onlyAdmin;
 ## Structs
 ### StakerInfo
 *Stores staker's info:
-stakeTime: The time of the last stake
 stake: All of the staker's staked funds
 cooldown: For penalized stakers, a cooldown period until staker rights can be used
 numRoles: Number of roles the staker has, to control permitted number of roles by `stake`*
@@ -214,9 +215,8 @@ numRoles: Number of roles the staker has, to control permitted number of roles b
 
 ```solidity
 struct StakerInfo {
-    uint256 stakeTime;
     uint256 stake;
-    uint256 cooldown;
+    uint64 cooldown;
     uint8 numRoles;
 }
 ```

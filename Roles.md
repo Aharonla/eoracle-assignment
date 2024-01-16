@@ -2,7 +2,7 @@
 [Git Source](https://github.com/Aharonla/Eoracle-assignment/blob/7db76df3801c3532d6529fee9d7faf2bcd647e83/src/Roles.sol)
 
 **Inherits:**
-[IRoles](/src/IRoles.sol/interface.IRoles.md), AccessControl
+IRoles, AccessControl
 
 
 ## State Variables
@@ -19,8 +19,8 @@ bytes32 public constant STAKER_ROLE = keccak256("STAKER_ROLE");
 mapping(bytes32 role => bool isAllowed) private roles;
 ```
 
+## Modifiers
 
-## Functions
 ### onlyAdmin
 
 
@@ -34,6 +34,8 @@ modifier onlyAdmin();
 ```solidity
 modifier existingRole(bytes32 _role);
 ```
+
+## Functions
 
 ### constructor
 
@@ -79,5 +81,6 @@ function removeRole(bytes32 _role) external onlyAdmin existingRole(_role);
 |Name|Type|Description|
 |----|----|-----------|
 |`_role`|`bytes32`|The role to remove|
+
 
 
