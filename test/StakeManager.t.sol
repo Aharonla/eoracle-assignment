@@ -15,7 +15,7 @@ contract StakeManagerTest is PRBTest, StdCheats {
     bytes32 public constant STAKER_ROLE = keccak256("STAKER_ROLE");
 
     event SetConfiguration(uint indexed amount, uint indexed time);
-    event Register(uint indexed stakeTime, uint indexed stake, bytes32 role);
+    event Register(uint indexed stake);
     event RoleGranted(bytes32 indexed role, address indexed account, address indexed sender);
     event Unregister(uint indexed stake);
     event RoleRevoked(bytes32 indexed role, address indexed account, address indexed sender);
@@ -42,7 +42,7 @@ contract StakeManagerTest is PRBTest, StdCheats {
     /// @dev Test correct call to setConfiguration
     function test_SetConfiguration() public {
         uint registrationDepositAmount = 10;
-        uint registrationWaitTime = 100;
+        uint64 registrationWaitTime = 100;
         vm.expectEmit(true, true, true, false);
         emit SetConfiguration(registrationDepositAmount, registrationWaitTime);
         stakeManager.setConfiguration(
@@ -65,20 +65,20 @@ contract StakeManagerTest is PRBTest, StdCheats {
 
     function test_Register() public payable {
         uint registrationDepositAmount = 100;
-        uint registrationWaitTime = 3600;
+        uint64 registrationWaitTime = 3600;
         stakeManager.setConfiguration(
             registrationDepositAmount, 
             registrationWaitTime
         );
-        vm.expectEmit(true, true, true, false);
-        emit Register(block.timestamp, registrationDepositAmount, STAKER_ROLE);
+        vm.expectEmit(true, false, false, false);
+        emit Register(registrationDepositAmount);
         stakeManager.register{value: registrationDepositAmount}();
         assertEq(address(stakeManager).balance, registrationDepositAmount);
     }
 
     function test_RevertWhen_Register_WrongAmountSent() public payable {
         uint registrationDepositAmount = 100;
-        uint registrationWaitTime = 3600;
+        uint64 registrationWaitTime = 3600;
         stakeManager.setConfiguration(
             registrationDepositAmount, 
             registrationWaitTime
@@ -89,7 +89,7 @@ contract StakeManagerTest is PRBTest, StdCheats {
 
     function test_ClaimRole() public payable {
         uint registrationDepositAmount = 100;
-        uint registrationWaitTime = 3600;
+        uint64 registrationWaitTime = 3600;
         stakeManager.setConfiguration(
             registrationDepositAmount, 
             registrationWaitTime
@@ -104,7 +104,7 @@ contract StakeManagerTest is PRBTest, StdCheats {
 
         function test_RevertWhen_ClaimRole_NotStaker() public payable {
             uint registrationDepositAmount = 100;
-            uint registrationWaitTime = 3600;
+            uint64 registrationWaitTime = 3600;
             stakeManager.setConfiguration(
                 registrationDepositAmount, 
                 registrationWaitTime
@@ -118,7 +118,7 @@ contract StakeManagerTest is PRBTest, StdCheats {
 
         function test_RevertWhen_ClaimRole_NoExistingRole() public payable {
             uint registrationDepositAmount = 100;
-            uint registrationWaitTime = 3600;
+            uint64 registrationWaitTime = 3600;
             bytes32 newRole = "NEW_ROLE";
             stakeManager.setConfiguration(
                 registrationDepositAmount, 
@@ -133,7 +133,7 @@ contract StakeManagerTest is PRBTest, StdCheats {
 
         function test_RevertWhen_ClaimRole_RestrictedStaker() public payable {
             uint registrationDepositAmount = 100;
-            uint registrationWaitTime = 3600;
+            uint64 registrationWaitTime = 3600;
             stakeManager.setConfiguration(
                 registrationDepositAmount, 
                 registrationWaitTime
@@ -147,7 +147,7 @@ contract StakeManagerTest is PRBTest, StdCheats {
         
         function test_RevertWhen_ClaimRole_NotEnoughFunds() public payable {
             uint registrationDepositAmount = 100;
-            uint registrationWaitTime = 3600;
+            uint64 registrationWaitTime = 3600;
             stakeManager.setConfiguration(
                 registrationDepositAmount, 
                 registrationWaitTime
@@ -169,7 +169,7 @@ contract StakeManagerTest is PRBTest, StdCheats {
         
         function test_RevertWhen_ClaimRole_StakerHasRole() public payable {
             uint registrationDepositAmount = 100;
-            uint registrationWaitTime = 3600;
+            uint64 registrationWaitTime = 3600;
             stakeManager.setConfiguration(
                 registrationDepositAmount, 
                 registrationWaitTime
@@ -190,7 +190,7 @@ contract StakeManagerTest is PRBTest, StdCheats {
 
         function test_Unregister() public payable {
             uint registrationDepositAmount = 100;
-            uint registrationWaitTime = 3600;
+            uint64 registrationWaitTime = 3600;
             bytes32 newRole = "NEW_ROLE";
             stakeManager.setConfiguration(
                 registrationDepositAmount, 
@@ -210,7 +210,7 @@ contract StakeManagerTest is PRBTest, StdCheats {
 
         function test_RevertWhen_Unregister_RestrictedStaker() public payable {
             uint registrationDepositAmount = 100;
-            uint registrationWaitTime = 3600;
+            uint64 registrationWaitTime = 3600;
             stakeManager.setConfiguration(
                 registrationDepositAmount, 
                 registrationWaitTime
@@ -225,7 +225,7 @@ contract StakeManagerTest is PRBTest, StdCheats {
         
         function test_RevertWhen_Unregister_NotStaker() public payable {
             uint registrationDepositAmount = 100;
-            uint registrationWaitTime = 3600;
+            uint64 registrationWaitTime = 3600;
             stakeManager.setConfiguration(
                 registrationDepositAmount, 
                 registrationWaitTime
@@ -238,7 +238,7 @@ contract StakeManagerTest is PRBTest, StdCheats {
 
         function test_Stake() public payable {
             uint registrationDepositAmount = 100;
-            uint registrationWaitTime = 3600;
+            uint64 registrationWaitTime = 3600;
             stakeManager.setConfiguration(
                 registrationDepositAmount, 
                 registrationWaitTime
@@ -251,7 +251,7 @@ contract StakeManagerTest is PRBTest, StdCheats {
         
         function test_RevertWhen_Stake_NotStaker() public payable {
             uint registrationDepositAmount = 100;
-            uint registrationWaitTime = 3600;
+            uint64 registrationWaitTime = 3600;
             stakeManager.setConfiguration(
                 registrationDepositAmount, 
                 registrationWaitTime
@@ -267,7 +267,7 @@ contract StakeManagerTest is PRBTest, StdCheats {
 
         function test_Unstake() public payable {
             uint registrationDepositAmount = 100;
-            uint registrationWaitTime = 3600;
+            uint64 registrationWaitTime = 3600;
             stakeManager.setConfiguration(
                 registrationDepositAmount,
                 registrationWaitTime
@@ -283,7 +283,7 @@ contract StakeManagerTest is PRBTest, StdCheats {
 
         function test_RevertWhen_Unstake_NotStaker() public payable {
             uint registrationDepositAmount = 100;
-            uint registrationWaitTime = 3600;
+            uint64 registrationWaitTime = 3600;
             stakeManager.setConfiguration(
                 registrationDepositAmount,
                 registrationWaitTime
@@ -299,7 +299,7 @@ contract StakeManagerTest is PRBTest, StdCheats {
 
         function test_RevertWhen_Unstake_RestrictedStaker() public payable {
             uint registrationDepositAmount = 100;
-            uint registrationWaitTime = 3600;
+            uint64 registrationWaitTime = 3600;
             stakeManager.setConfiguration(
                 registrationDepositAmount,
                 registrationWaitTime
@@ -313,7 +313,7 @@ contract StakeManagerTest is PRBTest, StdCheats {
 
         function test_RevertWhen_Unstake_NotEnoughFunds() public payable {
             uint registrationDepositAmount = 100;
-            uint registrationWaitTime = 3600;
+            uint64 registrationWaitTime = 3600;
             stakeManager.setConfiguration(
                 registrationDepositAmount,
                 registrationWaitTime
@@ -334,7 +334,7 @@ contract StakeManagerTest is PRBTest, StdCheats {
 
         function test_Slash() public payable {
             uint registrationDepositAmount = 100;
-            uint registrationWaitTime = 3600;
+            uint64 registrationWaitTime = 3600;
             stakeManager.setConfiguration(
                 registrationDepositAmount,
                 registrationWaitTime
@@ -347,7 +347,7 @@ contract StakeManagerTest is PRBTest, StdCheats {
 
         function test_RevertWhen_Slash_NotAdmin() public payable {
             uint registrationDepositAmount = 100;
-            uint registrationWaitTime = 3600;
+            uint64 registrationWaitTime = 3600;
             stakeManager.setConfiguration(
                 registrationDepositAmount,
                 registrationWaitTime
@@ -362,7 +362,7 @@ contract StakeManagerTest is PRBTest, StdCheats {
 
         function test_revertWhen_Slash_NotEnoughFunds() public payable {
             uint registrationDepositAmount = 100;
-            uint registrationWaitTime = 3600;
+            uint64 registrationWaitTime = 3600;
             stakeManager.setConfiguration(
                 registrationDepositAmount,
                 registrationWaitTime
@@ -376,7 +376,7 @@ contract StakeManagerTest is PRBTest, StdCheats {
 
         function test_Withdraw() public payable {
             uint registrationDepositAmount = 100;
-            uint registrationWaitTime = 3600;
+            uint64 registrationWaitTime = 3600;
             stakeManager.setConfiguration(
                 registrationDepositAmount,
                 registrationWaitTime
