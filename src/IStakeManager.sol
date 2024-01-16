@@ -24,6 +24,12 @@ interface IStakeManager {
     */
     event Stake(uint indexed stake);
 
+    /**
+    * @dev Emitted when staker withdraws funds
+    * @param stake The amount withdrawn
+    */
+    event Unstake(uint indexed stake);
+
 
     /**
     * @dev Emitted when a staker claims a role
@@ -98,7 +104,7 @@ function claimRole(bytes32 _role) external;
  /**
  * @dev Allows registered stakers to unstake their ether from the contract.
  */
- function unstake() external;
+    function unstake(uint _amount) external;
 
  /**
  * @dev Allows an admin to slash a portion of the staked ether of a given staker.

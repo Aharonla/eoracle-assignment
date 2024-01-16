@@ -163,4 +163,31 @@ contract StakeManager is IStakeManager, Roles {
         emit Stake(msg.value);
     }
 
+    /**
+    * @dev used to withdraw staked funds by staker
+    * @param _amount Amount of funds to withdraw
+    * Restrictions:
+    * - Only stakers can call
+    * - Staker should not be in cooldown period
+    * - Staker can not withdraw if 
+    * - Staker has enough staked funds for existing roles after withdrawal.
+    * If last restriction is not met, staker should call `renounceRole` 
+    * to reduce the number of roles until unstaking is possible
+    */
+    function unstake(uint _amount) external onlyStaker NotRestricted {
+        if (
+            stakers[_msgSender()].numRoles * registrationDepositAmount > (stakers[_msgSender()].stake - _amount)
+        ) {
+            revert NotEnoughFunds(
+                _msgSender(),
+                _amount,
+                stakers[_msgSender()].numRoles * registrationDepositAmount 
+                - stakers[_msgSender()].stake
+            );
+        }
+        stakers[_msgSender()].stake -= _amount;
+        emit Unstake(_amount);
+        payable(_msgSender()).transfer(_amount);
+    }
+
 }
