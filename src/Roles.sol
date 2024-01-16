@@ -1,54 +1,64 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity >=0.8.23;
 
-interface IRoles {
-    /**
-    * @dev emitted when a role is added to `allowedRoles`
-    */
-    event RoleAdded(bytes32 indexed role);
+import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
+import {IRoles} from "./IRoles.sol";
+
+contract Roles is IRoles, AccessControl {
+    bytes32 public constant STAKER_ROLE = keccak256("STAKER_ROLE");
+
+    mapping (bytes32 role => bool isAllowed) private roles;
+
+    modifier onlyAdmin() {
+        if (!hasRole(DEFAULT_ADMIN_ROLE, _msgSender())) {
+            revert NotAdmin(_msgSender());
+        }
+        _;
+    }
+
+    modifier existingRole(bytes32 _role) {
+        if (!roles[_role]) {
+            revert RoleNotAllowed(_role);
+        }
+        _;
+    }
+
+    constructor() {
+        _grantRole(DEFAULT_ADMIN_ROLE, _msgSender());
+    }
 
     /**
-    * @dev emitted when a role is removed from `allowedRoles`
+    * @dev Overrides AccessControl's `grantRole` function to allow only internal use of _grantRole
     */
-    event RoleRemoved(bytes32 indexed role);
+    function grantRole(bytes32, address) public pure override {
+        revert NoPublicGrantRole();
+    }
 
     /**
-    * @dev caller is not `admin`
+    * @dev Adds role to allowed roles
+    * @param _role The role to add
     */
-    error NotAdmin(address from);
+    function addRole(bytes32 _role) 
+    external 
+    onlyAdmin
+    {
+        if (roles[_role]) {
+            revert RoleAllowed(_role);
+        }
+        roles[_role] = true;
+        emit RoleAdded(_role);
+    }
 
     /**
-    * @dev `role` is not listed in `allowedRoles`
+    * @dev Removes role from allowed roles
+    * @param _role The role to remove
     */
-    error RoleNotAllowed(bytes32 role);
-
-    /**
-    * @dev `role` is already listed in `allowedRoles`
-    */
-    error RoleAllowed(bytes32 role);
-
-    /**
-    * @dev `grantRole` is overriden and reverts
-    */
-    error NoPublicGrantRole();
-
-    /**
-    * @dev Add role to allowedRoles mapping
-    * Requirements:
-    * - can only be accessed by `admin` role
-    * - if `_role` is allowed, should revert with `RoleAllowed`
-    * - should emit `RoleAdded` event
-    * @param _role role to be added
-    */
-    function addRole(bytes32 _role) external;
-
-    /**
-    * @dev Remove role from allowedRoles mapping
-    * Requirements:
-    * - can only be accessed by `admin` role
-    * - if `_role` is not allowed, should revert with `RoleNotAllowed`
-    * - should emit `RoleRemoved` event
-    * @param _role role to be removed
-    */
-    function removeRole(bytes32 _role) external;
+    function removeRole(bytes32 _role) 
+    external 
+    onlyAdmin
+    existingRole(_role)
+    {
+        roles[_role] = false;
+        emit RoleRemoved(_role);
+    }
 }
