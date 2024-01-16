@@ -195,9 +195,9 @@ contract StakeManager is IStakeManager, Roles {
     function slash(address staker, uint256 amount) external onlyAdmin {
         if (stakers[staker].stake < amount) {
             revert NotEnoughFunds(
-                _msgSender(),
+                staker,
                 amount,
-                stakers[_msgSender()].stake
+                stakers[staker].stake
             );
         }
         stakers[staker].stake -= amount;
