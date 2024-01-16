@@ -19,12 +19,14 @@ contract StakeManagerTest is PRBTest, StdCheats {
     event RoleGranted(bytes32 indexed role, address indexed account, address indexed sender);
     event Unregister(uint indexed stake);
     event RoleRevoked(bytes32 indexed role, address indexed account, address indexed sender);
+    event Stake(uint indexed stake);
     error NotAdmin(address from);
     error IncorrectAmountSent();
     error NotStaker(address caller);
     error RoleNotAllowed(bytes32 role);
     error Restricted();
     error NotEnoughFunds(address staker, uint requiredFunds, uint availableFunds);
+    error StakerRoleClaimed(address staker, bytes32 role);
 
     receive() external payable {}
 
@@ -229,5 +231,34 @@ contract StakeManagerTest is PRBTest, StdCheats {
             stakeManager.addRole("SECOND_ROLE");
             vm.expectRevert(abi.encodeWithSelector(NotStaker.selector, address(this)));
             stakeManager.unregister();
+        }
+
+        function test_Stake() public payable {
+            uint registrationDepositAmount = 100;
+            uint registrationWaitTime = 3600;
+            stakeManager.setConfiguration(
+                registrationDepositAmount, 
+                registrationWaitTime
+            );
+            stakeManager.register{value: registrationDepositAmount}();
+            vm.expectEmit(true, false, false, false);
+            emit Stake(100);
+            stakeManager.stake{value: 100}();
+        }
+        
+        function test_RevertWhen_Stake_NotStaker() public payable {
+            uint registrationDepositAmount = 100;
+            uint registrationWaitTime = 3600;
+            stakeManager.setConfiguration(
+                registrationDepositAmount, 
+                registrationWaitTime
+            );
+            vm.expectRevert(
+                abi.encodeWithSelector(
+                    NotStaker.selector, 
+                    address(this)
+                )
+            );
+            stakeManager.stake{value: 100}();
         }
 
