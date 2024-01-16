@@ -9,8 +9,9 @@ interface IStakeManager {
 
     /** 
     * @dev Emitted after registering as staker
+    * @param stake The amount added by the registering staker
     */
-    event Register(uint indexed stakeTime, uint indexed stake, bytes32 role);
+    event Register(uint indexed stake);
 
     /** 
     * @dev Emitted after staker unregistering from the protocol
@@ -83,7 +84,7 @@ interface IStakeManager {
     */
     function setConfiguration(
        uint256 registrationDepositAmount, 
-       uint registrationWaitTime
+       uint64 registrationWaitTime
        ) external;
 
     /**
