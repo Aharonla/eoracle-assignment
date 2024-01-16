@@ -22,6 +22,7 @@ contract StakeManagerTest is PRBTest, StdCheats {
     event Stake(uint indexed stake);
     event Unstake(uint indexed stake);
     event Slash(address indexed staker, uint indexed amount, uint indexed cooldown);
+    event Withdraw(uint amount);
     error NotAdmin(address from);
     error IncorrectAmountSent();
     error NotStaker(address caller);
@@ -373,3 +374,19 @@ contract StakeManagerTest is PRBTest, StdCheats {
             stakeManager.slash(address(this), 101);
         }
 
+        function test_Withdraw() public payable {
+            uint registrationDepositAmount = 100;
+            uint registrationWaitTime = 3600;
+            stakeManager.setConfiguration(
+                registrationDepositAmount,
+                registrationWaitTime
+            );
+            stakeManager.register{value: registrationDepositAmount}();
+            stakeManager.slash(address(this), 50);
+            uint balanceBefore = address(this).balance;
+            vm.expectEmit(true, false, false, false);
+            emit Withdraw(50);
+            stakeManager.withdraw();
+            assertEq(address(this).balance, balanceBefore + 50);
+        }
+}
