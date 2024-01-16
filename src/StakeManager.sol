@@ -13,20 +13,20 @@ contract StakeManager is IStakeManager, Roles {
     * numRoles: Number of roles the staker has, to control permitted number of roles by `stake`  
     */
     struct StakerInfo {
-        uint stake;
+        uint256 stake;
         uint64 cooldown;
         uint8 numRoles;
     }
 
-    uint private registrationDepositAmount;
+    uint256 private registrationDepositAmount;
     uint64 private registrationWaitTime;
-    uint private slashedFunds;
+    uint256 private slashedFunds;
     mapping (address staker => StakerInfo info) private stakers;
     /**
     * @dev Stores the staker's roles by index (iMax = stakers[staker].numRoles) 
     * to allow revoking roles iteratively once staker unregisters.
     */
-    mapping (address staker => mapping(uint index => bytes32 role)) private stakerRoles;
+    mapping (address staker => mapping(uint256 index => bytes32 role)) private stakerRoles;
 
 
     /**
@@ -65,7 +65,7 @@ contract StakeManager is IStakeManager, Roles {
     * @param _registrationWaitTime: Cooldown period for slashed stakers
     */
     function setConfiguration(
-        uint _registrationDepositAmount, 
+        uint256 _registrationDepositAmount, 
         uint64 _registrationWaitTime
     ) 
     external
@@ -135,8 +135,8 @@ contract StakeManager is IStakeManager, Roles {
     * - Calling staker can not be in cooldown period
     */
     function unregister() external payable onlyStaker NotRestricted {
-        uint returnValue = stakers[_msgSender()].stake;
-        for (uint i; i < stakers[_msgSender()].numRoles; i++) {
+        uint256 returnValue = stakers[_msgSender()].stake;
+        for (uint256 i; i < stakers[_msgSender()].numRoles; i++) {
             renounceRole(stakerRoles[_msgSender()][i], _msgSender());
             delete(stakerRoles[_msgSender()][i]);
         }
@@ -167,7 +167,7 @@ contract StakeManager is IStakeManager, Roles {
     * If last restriction is not met, staker should call `renounceRole` 
     * to reduce the number of roles until unstaking is possible
     */
-    function unstake(uint _amount) external onlyStaker NotRestricted {
+    function unstake(uint256 _amount) external onlyStaker NotRestricted {
         if (
             stakers[_msgSender()].numRoles * registrationDepositAmount > (stakers[_msgSender()].stake - _amount)
         ) {
@@ -192,7 +192,7 @@ contract StakeManager is IStakeManager, Roles {
     * - Only admin can call
     * - `amount` is higher than or equal the staker's funds
     */
-    function slash(address staker, uint amount) external onlyAdmin {
+    function slash(address staker, uint256 amount) external onlyAdmin {
         if (stakers[staker].stake < amount) {
             revert NotEnoughFunds(
                 _msgSender(),
@@ -212,7 +212,7 @@ contract StakeManager is IStakeManager, Roles {
     * - Callable only by admin
     */
     function withdraw() external payable onlyAdmin {
-        uint returnValue = slashedFunds;
+        uint256 returnValue = slashedFunds;
         slashedFunds = 0;
         emit Withdraw(returnValue);
         payable(_msgSender()).transfer(returnValue);

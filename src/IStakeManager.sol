@@ -5,31 +5,31 @@ interface IStakeManager {
     /**
     * @dev Emitted after setting protocol configurations
     */
-    event SetConfiguration(uint indexed amount, uint indexed time);
+    event SetConfiguration(uint256 indexed amount, uint256 indexed time);
 
     /** 
     * @dev Emitted after registering as staker
     * @param stake The amount added by the registering staker
     */
-    event Register(uint indexed stake);
+    event Register(uint256 indexed stake);
 
     /** 
     * @dev Emitted after staker unregistering from the protocol
     * @param stake The amount withrawn by the exiting staker
     */
-    event Unregister(uint indexed stake);
+    event Unregister(uint256 indexed stake);
 
     /** 
     * @dev Emitted when staker adds funds to stake
     * @param stake The amount added
     */
-    event Stake(uint indexed stake);
+    event Stake(uint256 indexed stake);
 
     /**
     * @dev Emitted when staker withdraws funds
     * @param stake The amount withdrawn
     */
-    event Unstake(uint indexed stake);
+    event Unstake(uint256 indexed stake);
 
     /**
     * @dev Emitted when staker is penalized
@@ -37,7 +37,7 @@ interface IStakeManager {
     * @param amount Amount slashed from stake
     * @param cooldown End of cooldown period
     */
-    event Slash(address indexed staker, uint indexed amount, uint indexed cooldown);
+    event Slash(address indexed staker, uint256 indexed amount, uint256 indexed cooldown);
 
     /**
     * @dev Emitted when a staker claims a role
@@ -50,7 +50,7 @@ interface IStakeManager {
     * @dev Emitted when admin withdraws the slashed funds
     * @param amount The withdraw amount
     */
-    event Withdraw(uint amount);
+    event Withdraw(uint256 amount);
 
     /**
     * @dev Incorrect ether amount sent to register. Should be `registrationDepositAmount`
@@ -65,7 +65,7 @@ interface IStakeManager {
     /**
     * @dev Staked funds insufficient for the attempted action
     */
-    error NotEnoughFunds(address staker, uint requiredFunds, uint availableFunds);
+    error NotEnoughFunds(address staker, uint256 requiredFunds, uint256 availableFunds);
 
     /**
     * @dev caller is not `staker`
@@ -118,14 +118,14 @@ function claimRole(bytes32 _role) external;
     /**
     * @dev Allows registered stakers to unstake their ether from the contract.
     */
-    function unstake(uint _amount) external;
+    function unstake(uint256 _amount) external;
 
     /**
     * @dev Allows an admin to slash a portion of the staked ether of a given staker.
     * @param staker The address of the staker to be slashed.
     * @param amount The amount of ether to be slashed from the staker.
     */
-    function slash(address staker, uint amount) external;
+    function slash(address staker, uint256 amount) external;
 
       /**
     * @dev used to withdraw all slashed funds from the contract
