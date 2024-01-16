@@ -11,12 +11,23 @@ interface IStakeManager {
     * @dev Emitted after registering as staker
     */
     event Register(uint indexed stakeTime, uint indexed stake, bytes32 role);
+
+    /**
+
+    /**
+    * @dev Incorrect ether amount sent to register. Should be `registrationDepositAmount`
+    */
+    error IncorrectAmountSent();
+
  /**
  * @dev Allows an admin to set the configuration of the staking contract.
  * @param registrationDepositAmount Initial registration deposit amount in wei.
  * @param registrationWaitTime The duration a staker must wait after initiating registration.
  */
- function setConfiguration(uint256 registrationDepositAmount, uint256 registrationWaitTime) external;
+    function setConfiguration(
+       uint256 registrationDepositAmount, 
+       uint registrationWaitTime
+       ) external;
 
  /**
  * @dev Allows an account to register as a staker.
