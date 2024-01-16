@@ -15,9 +15,21 @@ interface IStakeManager {
     /**
 
     /**
+    * @dev Emitted when a staker claims a role
+    * @param staker The staker claiming the role
+    * @param role The role claimed (bytes32 representation)
+    */
+    event RoleClaimed(address staker, bytes32 role);
+
+    /**
     * @dev Incorrect ether amount sent to register. Should be `registrationDepositAmount`
     */
     error IncorrectAmountSent();
+
+    /**
+    * @dev The calling staker is in cooldown period
+    */
+    error Restricted();
 
  /**
  * @dev Allows an admin to set the configuration of the staking contract.
@@ -33,6 +45,19 @@ interface IStakeManager {
  * @dev Allows an account to register as a staker.
  */
  function register() external payable;
+
+    /**
+    * @dev used by stakers to claim roles
+    * @param _role the role's "name" (Should be fixed length (bytes32),
+    * and by convention is an upper-cased underscored string)
+    * Restrictions:
+    * - Can be accessed only by stakers
+    * - `_role` should be permitted by manager
+    * - Calling staker can not be in cooldown period
+    * - Staker has not claimed `_role` before
+    * - Staker has enough staked funds to claim another role
+    */
+function claimRole(bytes32 _role) external;
 
  /**
  * @dev Allows a registered staker to unregister and exit the staking system.
