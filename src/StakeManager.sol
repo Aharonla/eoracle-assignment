@@ -153,4 +153,14 @@ contract StakeManager is IStakeManager, Roles {
         payable(_msgSender()).transfer(returnValue);
     }
 
+    /** 
+    * @dev used to add staked funds by staker
+    * Restrictions:
+    * - Only stakers can call
+    */
+    function stake() external payable onlyStaker {
+        stakers[_msgSender()].stake += msg.value;
+        emit Stake(msg.value);
+    }
+
 }

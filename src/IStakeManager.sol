@@ -18,6 +18,12 @@ interface IStakeManager {
     */
     event Unregister(uint indexed stake);
 
+    /** 
+    * @dev Emitted when staker adds funds to stake
+    * @param stake The amount added
+    */
+    event Stake(uint indexed stake);
+
 
     /**
     * @dev Emitted when a staker claims a role
@@ -35,6 +41,21 @@ interface IStakeManager {
     * @dev The calling staker is in cooldown period
     */
     error Restricted();
+
+    /**
+    * @dev Staked funds insufficient for the attempted action
+    */
+    error NotEnoughFunds(address staker, uint requiredFunds, uint availableFunds);
+
+    /**
+    * @dev caller is not `staker`
+    */
+    error NotStaker(address caller);
+
+    /**
+    * @dev User is already a staker 
+    */
+    error StakerRoleClaimed(address staker, bytes32 role);
 
  /**
  * @dev Allows an admin to set the configuration of the staking contract.
@@ -67,7 +88,7 @@ function claimRole(bytes32 _role) external;
  /**
  * @dev Allows a registered staker to unregister and exit the staking system.
  */
- function unregister() external;
+    function unregister() external payable;
 
  /**
  * @dev Allows registered stakers to stake ether into the contract.

@@ -24,6 +24,7 @@ contract StakeManagerTest is PRBTest, StdCheats {
     error NotStaker(address caller);
     error RoleNotAllowed(bytes32 role);
     error Restricted();
+    error NotEnoughFunds(address staker, uint requiredFunds, uint availableFunds);
 
     receive() external payable {}
 
