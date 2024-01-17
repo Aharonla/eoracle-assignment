@@ -1,46 +1,14 @@
 # StakeManager
-[Git Source](https://github.com/Aharonla/Eoracle-assignment/blob/7db76df3801c3532d6529fee9d7faf2bcd647e83/src/StakeManager.sol)
 
 **Inherits:**
-IStakeManager, Roles
+Initializable, IStakeManager, Roles, UUPSUpgradeable
 
 
 ## State Variables
-### registrationDepositAmount
+### stakeManagerStorage
 
 ```solidity
-uint256 private registrationDepositAmount;
-```
-
-
-### registrationWaitTime
-
-```solidity
-uint64 private registrationWaitTime;
-```
-
-
-### slashedFunds
-
-```solidity
-uint256 private slashedFunds;
-```
-
-
-### stakers
-
-```solidity
-mapping(address staker => StakerInfo info) private stakers;
-```
-
-
-### stakerRoles
-*Stores the staker's roles by index (iMax = stakers[staker].numRoles)
-to allow revoking roles iteratively once staker unregisters.*
-
-
-```solidity
-mapping(address staker => mapping(uint256 index => bytes32 role)) private stakerRoles;
+StakeManagerStorage private stakeManagerStorage;
 ```
 
 ## Modifiers
@@ -73,6 +41,19 @@ modifier onlyStaker();
 ```
 
 ## Functions
+### constructor
+
+
+```solidity
+constructor();
+```
+
+### initialize
+
+
+```solidity
+function initialize() public initializer;
+```
 
 ### setConfiguration
 
@@ -80,13 +61,13 @@ modifier onlyStaker();
 
 
 ```solidity
-function setConfiguration(uint256 _registrationDepositAmount, uint64 _registrationWaitTime) external onlyAdmin;
+function setConfiguration(uint128 _registrationDepositAmount, uint64 _registrationWaitTime) external onlyAdmin;
 ```
 **Parameters**
 
 |Name|Type|Description|
 |----|----|-----------|
-|`_registrationDepositAmount`|`uint256`||
+|`_registrationDepositAmount`|`uint128`||
 |`_registrationWaitTime`|`uint64`||
 
 
@@ -163,13 +144,13 @@ to reduce the number of roles until unstaking is possible
 
 
 ```solidity
-function unstake(uint256 _amount) external onlyStaker NotRestricted;
+function unstake(uint128 _amount) external onlyStaker NotRestricted;
 ```
 **Parameters**
 
 |Name|Type|Description|
 |----|----|-----------|
-|`_amount`|`uint256`|Amount of funds to withdraw|
+|`_amount`|`uint128`|Amount of funds to withdraw|
 
 
 ### slash
@@ -183,14 +164,14 @@ The penalty also involves a cooldown period, restricting staker's actions*
 
 
 ```solidity
-function slash(address staker, uint256 amount) external onlyAdmin;
+function slash(address staker, uint128 amount) external onlyAdmin;
 ```
 **Parameters**
 
 |Name|Type|Description|
 |----|----|-----------|
 |`staker`|`address`|The penalized staker|
-|`amount`|`uint256`|The amount of funds to slash|
+|`amount`|`uint128`|The amount of funds to slash|
 
 
 ### withdraw
@@ -205,6 +186,13 @@ Restrictions:
 function withdraw() external payable onlyAdmin;
 ```
 
+### _authorizeUpgrade
+
+
+```solidity
+function _authorizeUpgrade(address newImplementation) internal override onlyAdmin;
+```
+
 ## Structs
 ### StakerInfo
 *Stores staker's info:
@@ -215,9 +203,23 @@ numRoles: Number of roles the staker has, to control permitted number of roles b
 
 ```solidity
 struct StakerInfo {
-    uint256 stake;
-    uint64 cooldown;
     uint8 numRoles;
+    uint64 cooldown;
+    uint128 stake;
+}
+```
+
+### StakeManagerStorage
+*Storage structure of the StakeManager contract*
+
+
+```solidity
+struct StakeManagerStorage {
+    uint64 registrationWaitTime;
+    uint128 registrationDepositAmount;
+    uint128 slashedFunds;
+    mapping(address staker => StakerInfo info) stakers;
+    mapping(address staker => mapping(uint256 index => bytes32 role)) stakerRoles;
 }
 ```
 

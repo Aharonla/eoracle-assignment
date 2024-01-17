@@ -1,8 +1,6 @@
 # Roles
-[Git Source](https://github.com/Aharonla/Eoracle-assignment/blob/7db76df3801c3532d6529fee9d7faf2bcd647e83/src/Roles.sol)
-
 **Inherits:**
-IRoles, AccessControl
+IRoles, AccessControlUpgradeable
 
 
 ## State Variables
@@ -36,13 +34,6 @@ modifier existingRole(bytes32 _role);
 ```
 
 ## Functions
-
-### constructor
-
-
-```solidity
-constructor();
-```
 
 ### grantRole
 
