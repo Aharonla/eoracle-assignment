@@ -6,7 +6,6 @@ import { UUPSUpgradeable } from "openzeppelin-contracts-upgradeable/contracts/pr
 import { SafeCast } from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import { IStakeManager } from "./IStakeManager.sol";
 import { Roles } from "./Roles.sol";
-import { SafeCast } from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 
 
 contract StakeManager is Initializable, IStakeManager, Roles, UUPSUpgradeable {
@@ -17,19 +16,27 @@ contract StakeManager is Initializable, IStakeManager, Roles, UUPSUpgradeable {
     * numRoles: Number of roles the staker has, to control permitted number of roles by `stake`  
     */
     struct StakerInfo {
-        uint128 stake;
-        uint64 cooldown;
         uint8 numRoles;
+        uint64 cooldown;
+        uint128 stake;
+    }
+    /**
+    * @dev Storage structure of the StakeManager contract
+    */
+    struct StakeManagerStorage {
+        uint64 registrationWaitTime;
+        uint128 registrationDepositAmount;
+        uint128 slashedFunds;
+        mapping (address staker => StakerInfo info) stakers;
+        /**
+        * @dev Stores the staker's roles by index (iMax = stakers[staker].numRoles) 
+        * to allow revoking roles iteratively once staker unregisters.
+        */
+        mapping (address staker => mapping(uint256 index => bytes32 role)) stakerRoles;
     }
 
-    uint256 private registrationDepositAmount;
-    uint64 private registrationWaitTime;
-    uint256 private slashedFunds;
-    mapping (address staker => StakerInfo info) private stakers;
-    /**
-    * @dev Stores the staker's roles by index (iMax = stakers[staker].numRoles) 
-    * to allow revoking roles iteratively once staker unregisters.
-    */
+    StakeManagerStorage private stakeManagerStorage;
+    
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
@@ -46,7 +53,7 @@ contract StakeManager is Initializable, IStakeManager, Roles, UUPSUpgradeable {
     * @dev Enforces `registrationDepositAmount` for new stakers registration.
     */
     modifier CheckRegistrationAmount() {
-        if (msg.value != registrationDepositAmount) {
+        if (msg.value != stakeManagerStorage.registrationDepositAmount) {
             revert IncorrectAmountSent();
         }
         _;
@@ -56,7 +63,7 @@ contract StakeManager is Initializable, IStakeManager, Roles, UUPSUpgradeable {
     * @dev Enforces slashed staker restriction
     */
     modifier NotRestricted() {
-        if (stakers[_msgSender()].cooldown > block.timestamp) {
+        if (stakeManagerStorage.stakers[_msgSender()].cooldown > block.timestamp) {
             revert Restricted();
         }
         _;
@@ -84,8 +91,8 @@ contract StakeManager is Initializable, IStakeManager, Roles, UUPSUpgradeable {
     external
     onlyAdmin 
     {
-        registrationDepositAmount = _registrationDepositAmount;
-        registrationWaitTime = _registrationWaitTime;
+        stakeManagerStorage.registrationDepositAmount = _registrationDepositAmount;
+        stakeManagerStorage.registrationWaitTime = _registrationWaitTime;
         emit SetConfiguration(_registrationDepositAmount, _registrationWaitTime);
     }
 
@@ -99,9 +106,9 @@ contract StakeManager is Initializable, IStakeManager, Roles, UUPSUpgradeable {
     payable 
     CheckRegistrationAmount
     {
-        stakers[_msgSender()].stake += SafeCast.toUint128(msg.value);
+        stakeManagerStorage.stakers[_msgSender()].stake += SafeCast.toUint128(msg.value);
         _grantRole(STAKER_ROLE, _msgSender());
-        emit Register(stakers[_msgSender()].stake);
+        emit Register(stakeManagerStorage.stakers[_msgSender()].stake);
     }
 
     /**
@@ -125,18 +132,23 @@ contract StakeManager is Initializable, IStakeManager, Roles, UUPSUpgradeable {
             revert StakerRoleClaimed(_msgSender(), _role);
         }
         if (
-            (stakers[_msgSender()].numRoles + 1) * registrationDepositAmount 
+            (stakeManagerStorage.stakers[_msgSender()].numRoles + 1) 
+            * stakeManagerStorage.registrationDepositAmount 
             > 
-            stakers[_msgSender()].stake
+            stakeManagerStorage.stakers[_msgSender()].stake
         ) {
             revert NotEnoughFunds(
                 _msgSender(),
-                (stakers[_msgSender()].numRoles + 1) * registrationDepositAmount,
-                stakers[_msgSender()].stake
+                (stakeManagerStorage.stakers[_msgSender()].numRoles + 1) 
+                * stakeManagerStorage.registrationDepositAmount,
+                stakeManagerStorage.stakers[_msgSender()].stake
             );
         }
-        stakerRoles[_msgSender()][stakers[_msgSender()].numRoles] = _role;
-        stakers[_msgSender()].numRoles++;
+        stakeManagerStorage.stakerRoles
+        [_msgSender()]
+        [stakeManagerStorage.stakers[_msgSender()].numRoles] 
+        = _role;
+        stakeManagerStorage.stakers[_msgSender()].numRoles++;
         _grantRole(_role, _msgSender());
         emit RoleClaimed(_msgSender(), _role);
     }
@@ -148,13 +160,13 @@ contract StakeManager is Initializable, IStakeManager, Roles, UUPSUpgradeable {
     * - Calling staker can not be in cooldown period
     */
     function unregister() external payable onlyStaker NotRestricted {
-        uint256 returnValue = stakers[_msgSender()].stake;
-        for (uint256 i; i < stakers[_msgSender()].numRoles; i++) {
-            renounceRole(stakerRoles[_msgSender()][i], _msgSender());
-            delete(stakerRoles[_msgSender()][i]);
+        uint256 returnValue = stakeManagerStorage.stakers[_msgSender()].stake;
+        for (uint256 i; i < stakeManagerStorage.stakers[_msgSender()].numRoles; i++) {
+            renounceRole(stakeManagerStorage.stakerRoles[_msgSender()][i], _msgSender());
+            delete(stakeManagerStorage.stakerRoles[_msgSender()][i]);
         }
         renounceRole(STAKER_ROLE, _msgSender());
-        delete(stakers[_msgSender()]);
+        delete(stakeManagerStorage.stakers[_msgSender()]);
         emit Unregister(returnValue);
         payable(_msgSender()).transfer(returnValue);
     }
@@ -165,7 +177,7 @@ contract StakeManager is Initializable, IStakeManager, Roles, UUPSUpgradeable {
     * - Only stakers can call
     */
     function stake() external payable onlyStaker {
-        stakers[_msgSender()].stake += SafeCast.toUint128(msg.value);
+        stakeManagerStorage.stakers[_msgSender()].stake += SafeCast.toUint128(msg.value);
         emit Stake(msg.value);
     }
 
@@ -182,16 +194,20 @@ contract StakeManager is Initializable, IStakeManager, Roles, UUPSUpgradeable {
     */
     function unstake(uint128 _amount) external onlyStaker NotRestricted {
         if (
-            stakers[_msgSender()].numRoles * registrationDepositAmount > (stakers[_msgSender()].stake - _amount)
+            stakeManagerStorage.stakers[_msgSender()].numRoles 
+            * stakeManagerStorage.registrationDepositAmount 
+            > 
+            (stakeManagerStorage.stakers[_msgSender()].stake - _amount)
         ) {
             revert NotEnoughFunds(
                 _msgSender(),
                 _amount,
-                stakers[_msgSender()].numRoles * registrationDepositAmount 
-                - stakers[_msgSender()].stake
+                stakeManagerStorage.stakers[_msgSender()].numRoles 
+                * stakeManagerStorage.registrationDepositAmount 
+                - stakeManagerStorage.stakers[_msgSender()].stake
             );
         }
-        stakers[_msgSender()].stake -= _amount;
+        stakeManagerStorage.stakers[_msgSender()].stake -= _amount;
         emit Unstake(_amount);
         payable(_msgSender()).transfer(_amount);
     }
@@ -206,17 +222,17 @@ contract StakeManager is Initializable, IStakeManager, Roles, UUPSUpgradeable {
     * - `amount` is higher than or equal the staker's funds
     */
     function slash(address staker, uint128 amount) external onlyAdmin {
-        if (stakers[staker].stake < amount) {
+        if (stakeManagerStorage.stakers[staker].stake < amount) {
             revert NotEnoughFunds(
                 staker,
                 amount,
-                stakers[staker].stake
+                stakeManagerStorage.stakers[staker].stake
             );
         }
-        stakers[staker].stake -= amount;
-        stakers[staker].cooldown = uint64(block.timestamp) + registrationWaitTime;
-        slashedFunds += amount;
-        emit Slash(staker, amount, stakers[staker].cooldown);
+        stakeManagerStorage.stakers[staker].stake -= amount;
+        stakeManagerStorage.stakers[staker].cooldown = uint64(block.timestamp) + stakeManagerStorage.registrationWaitTime;
+        stakeManagerStorage.slashedFunds += amount;
+        emit Slash(staker, amount, stakeManagerStorage.stakers[staker].cooldown);
     }
 
     /**
@@ -225,8 +241,8 @@ contract StakeManager is Initializable, IStakeManager, Roles, UUPSUpgradeable {
     * - Callable only by admin
     */
     function withdraw() external payable onlyAdmin {
-        uint256 returnValue = slashedFunds;
-        slashedFunds = 0;
+        uint256 returnValue = stakeManagerStorage.slashedFunds;
+        stakeManagerStorage.slashedFunds = 0;
         emit Withdraw(returnValue);
         payable(_msgSender()).transfer(returnValue);
     }
