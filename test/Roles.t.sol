@@ -2,10 +2,12 @@
 pragma solidity >=0.8.23 <0.9.0;
 
 import { PRBTest } from "@prb/test/src/PRBTest.sol";
-import { console2 } from "forge-std/src/console2.sol";
-import { StdCheats } from "forge-std/src/StdCheats.sol";
+import { console2 } from "forge-std/console2.sol";
+import { StdCheats } from "forge-std/StdCheats.sol";
+import { ERC1967Proxy } from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
+import { ERC1967Utils } from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Utils.sol";
 
-import {Roles} from "../src/Roles.sol";
+import {StakeManager} from "../src/StakeManager.sol";
 
 /// @dev Tests for the Roles contract
 contract RolesTest is PRBTest, StdCheats {
@@ -15,15 +17,16 @@ contract RolesTest is PRBTest, StdCheats {
     error RoleAllowed(bytes32 role);
     error RoleNotAllowed(bytes32 role);
 
-    Roles internal roles;
+    StakeManager internal roles;
 
     bytes32 public constant DEFAULT_ADMIN_ROLE = 0x00;
     error NoPublicGrantRole();
 
     /// @dev A function invoked before each test case is run.
     function setUp() public virtual {
-        // Instantiate the contract-under-test.
-        roles = new Roles();
+        StakeManager implementation = new StakeManager();
+        ERC1967Proxy proxy = new ERC1967Proxy(address(implementation), abi.encodeWithSelector(implementation.initialize.selector));
+        roles = StakeManager(address(proxy));
     }
 
     /// @dev Test failure in case of external call to grantRole
