@@ -2,8 +2,11 @@
 pragma solidity >=0.8.23 <0.9.0;
 
 import { PRBTest } from "@prb/test/src/PRBTest.sol";
-import { console2 } from "forge-std/src/console2.sol";
-import { StdCheats } from "forge-std/src/StdCheats.sol";
+import { console2 } from "forge-std/console2.sol";
+import { StdCheats } from "forge-std/StdCheats.sol";
+import { ERC1967Proxy } from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
+import { ERC1967Utils } from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Utils.sol";
+// import { Upgrades } from "openzeppelin-foundry-upgrades/Upgrades.sol";
 
 import {StakeManager} from "../src/StakeManager.sol";
 
@@ -35,8 +38,9 @@ contract StakeManagerTest is PRBTest, StdCheats {
 
     /// @dev A function invoked before each test case is run.
     function setUp() public virtual {
-        // Instantiate the contract-under-test.
-        stakeManager = new StakeManager();
+        StakeManager implementation = new StakeManager();
+        ERC1967Proxy proxy = new ERC1967Proxy(address(implementation), abi.encodeWithSelector(implementation.initialize.selector));
+        stakeManager = StakeManager(address(proxy));
     }
 
     /// @dev Test correct call to setConfiguration
