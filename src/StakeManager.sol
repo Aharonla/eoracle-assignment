@@ -1,12 +1,15 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity >=0.8.23;
 
+import { Initializable } from "openzeppelin-contracts-upgradeable/contracts/proxy/utils/Initializable.sol";
+import { UUPSUpgradeable } from "openzeppelin-contracts-upgradeable/contracts/proxy/utils/UUPSUpgradeable.sol";
+import { SafeCast } from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import { IStakeManager } from "./IStakeManager.sol";
 import { Roles } from "./Roles.sol";
 import { SafeCast } from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 
 
-contract StakeManager is IStakeManager, Roles {
+contract StakeManager is Initializable, IStakeManager, Roles, UUPSUpgradeable {
     /**
     * @dev Stores staker's info:
     * stake: All of the staker's staked funds
@@ -27,8 +30,17 @@ contract StakeManager is IStakeManager, Roles {
     * @dev Stores the staker's roles by index (iMax = stakers[staker].numRoles) 
     * to allow revoking roles iteratively once staker unregisters.
     */
-    mapping (address staker => mapping(uint256 index => bytes32 role)) private stakerRoles;
 
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
+
+    function initialize() initializer public {
+        __AccessControl_init();
+        __UUPSUpgradeable_init();
+        _grantRole(DEFAULT_ADMIN_ROLE, _msgSender());
+    }
 
     /**
     * @dev Enforces `registrationDepositAmount` for new stakers registration.
@@ -218,4 +230,10 @@ contract StakeManager is IStakeManager, Roles {
         emit Withdraw(returnValue);
         payable(_msgSender()).transfer(returnValue);
     }
+
+    function _authorizeUpgrade(address newImplementation)
+        internal
+        onlyAdmin
+        override
+    {}
 }
