@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity >=0.8.23;
 
-import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
+import {AccessControlUpgradeable} from "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 import {IRoles} from "./IRoles.sol";
 
-contract Roles is IRoles, AccessControl {
+contract Roles is IRoles, AccessControlUpgradeable {
     bytes32 public constant STAKER_ROLE = keccak256("STAKER_ROLE");
 
     mapping (bytes32 role => bool isAllowed) private roles;
@@ -21,10 +21,6 @@ contract Roles is IRoles, AccessControl {
             revert RoleNotAllowed(_role);
         }
         _;
-    }
-
-    constructor() {
-        _grantRole(DEFAULT_ADMIN_ROLE, _msgSender());
     }
 
     /**
