@@ -6,13 +6,14 @@ import { console2 } from "forge-std/console2.sol";
 import { StdCheats } from "forge-std/StdCheats.sol";
 import { ERC1967Proxy } from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import { ERC1967Utils } from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Utils.sol";
-// import { Upgrades } from "openzeppelin-foundry-upgrades/Upgrades.sol";
+import { Upgrades, Options } from "openzeppelin-foundry-upgrades/Upgrades.sol";
 
-import {StakeManager} from "../src/StakeManager.sol";
+import { StakeManager } from "../src/StakeManager.sol";
 
 /// @dev Tests for the StakeManager contract
 contract StakeManagerTest is PRBTest, StdCheats {
     StakeManager internal stakeManager;
+    ERC1967Proxy internal proxy;
 
     bytes32 public constant DEFAULT_ADMIN_ROLE = 0x00;
     bytes32 public constant STAKER_ROLE = keccak256("STAKER_ROLE");
@@ -26,6 +27,7 @@ contract StakeManagerTest is PRBTest, StdCheats {
     event Unstake(uint256 indexed stake);
     event Slash(address indexed staker, uint256 indexed amount, uint256 indexed cooldown);
     event Withdraw(uint256 amount);
+    event FakeEvent();
     error NotAdmin(address from);
     error IncorrectAmountSent();
     error NotStaker(address caller);
@@ -39,8 +41,25 @@ contract StakeManagerTest is PRBTest, StdCheats {
     /// @dev A function invoked before each test case is run.
     function setUp() public virtual {
         StakeManager implementation = new StakeManager();
-        ERC1967Proxy proxy = new ERC1967Proxy(address(implementation), abi.encodeWithSelector(implementation.initialize.selector));
+        proxy = new ERC1967Proxy(
+            address(implementation), 
+            abi.encodeWithSelector(implementation.initialize.selector)
+        );
         stakeManager = StakeManager(address(proxy));
+    }
+
+    function test_Upgrade() public {
+        uint128 registrationDepositAmount = 100;
+        uint64 registrationWaitTime = 3600;
+        Options memory opts;
+        opts.unsafeSkipAllChecks = true;
+        Upgrades.upgradeProxy(address(proxy), "StakeManagerV2.sol:StakeManagerV2", "", opts);
+        vm.expectEmit(false, false, false, false);
+        emit FakeEvent();
+        stakeManager.setConfiguration(
+            registrationDepositAmount,
+            registrationWaitTime
+        );
     }
 
     /// @dev Test correct call to setConfiguration
