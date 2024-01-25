@@ -240,7 +240,7 @@ contract StakeManager is Initializable, IStakeManager, Roles, UUPSUpgradeable {
     * @notice Restrictions:
     * - Callable only by admin
     */
-    function withdraw() external payable onlyAdmin {
+    function withdraw() external onlyAdmin {
         uint256 returnValue = stakeManagerStorage.slashedFunds;
         stakeManagerStorage.slashedFunds = 0;
         emit Withdraw(returnValue);

@@ -132,5 +132,5 @@ function claimRole(bytes32 _role) external;
     * Restrictions:
     * - Callable only by admin
     */
-    function withdraw() external payable;
+    function withdraw() external;
 }
