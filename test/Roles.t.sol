@@ -7,12 +7,13 @@ import { StdCheats } from "forge-std/StdCheats.sol";
 import { ERC1967Proxy } from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import { ERC1967Utils } from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Utils.sol";
 
-import {StakeManager} from "../src/StakeManager.sol";
+import { StakeManager } from "../src/StakeManager.sol";
 
 /// @dev Tests for the Roles contract
 contract RolesTest is PRBTest, StdCheats {
     event RoleAdded(bytes32 indexed role);
     event RoleRemoved(bytes32 indexed role);
+
     error NotAdmin(address from);
     error RoleAllowed(bytes32 role);
     error RoleNotAllowed(bytes32 role);
@@ -20,12 +21,14 @@ contract RolesTest is PRBTest, StdCheats {
     StakeManager internal roles;
 
     bytes32 public constant DEFAULT_ADMIN_ROLE = 0x00;
+
     error NoPublicGrantRole();
 
     /// @dev A function invoked before each test case is run.
     function setUp() public virtual {
         StakeManager implementation = new StakeManager();
-        ERC1967Proxy proxy = new ERC1967Proxy(address(implementation), abi.encodeWithSelector(implementation.initialize.selector));
+        ERC1967Proxy proxy =
+            new ERC1967Proxy(address(implementation), abi.encodeWithSelector(implementation.initialize.selector));
         roles = StakeManager(address(proxy));
     }
 
@@ -44,9 +47,7 @@ contract RolesTest is PRBTest, StdCheats {
 
     /// @dev Test addRole failure in case of call by non-owner
     function test_RevertWhen_AddRole_NotOwner() public {
-        vm.expectRevert(
-            abi.encodeWithSelector(NotAdmin.selector, address(1))
-        );
+        vm.expectRevert(abi.encodeWithSelector(NotAdmin.selector, address(1)));
         vm.prank(address(1));
         roles.addRole("NEW_ROLE");
     }
@@ -54,9 +55,7 @@ contract RolesTest is PRBTest, StdCheats {
     function test_RevertWhen_AddRole_RoleExists() public {
         bytes32 newRole = "NEW_ROLE";
         roles.addRole("NEW_ROLE");
-        vm.expectRevert(
-            abi.encodeWithSelector(RoleAllowed.selector, newRole)
-        );
+        vm.expectRevert(abi.encodeWithSelector(RoleAllowed.selector, newRole));
         roles.addRole("NEW_ROLE");
     }
 
@@ -69,18 +68,14 @@ contract RolesTest is PRBTest, StdCheats {
 
     function test_RevertWhen_RemoveRole_NotOwner() public {
         roles.addRole("NEW_ROLE");
-        vm.expectRevert(
-            abi.encodeWithSelector(NotAdmin.selector, address(1))
-        );
+        vm.expectRevert(abi.encodeWithSelector(NotAdmin.selector, address(1)));
         vm.prank(address(1));
         roles.removeRole("NEW_ROLE");
     }
 
     function test_RevertWhen_AddRole_RoleDoesNotExists() public {
         bytes32 newRole = "NEW_ROLE";
-        vm.expectRevert(
-            abi.encodeWithSelector(RoleNotAllowed.selector, newRole)
-        );
+        vm.expectRevert(abi.encodeWithSelector(RoleNotAllowed.selector, newRole));
         roles.removeRole("NEW_ROLE");
     }
 }
