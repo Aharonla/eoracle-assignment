@@ -12,7 +12,8 @@
   "devDependencies": {
     "@prb/test": "^0.6.4",
     "forge-std": "github:foundry-rs/forge-std#v1",
-    "prettier": "^3.0.0",
+    "prettier": "3.2.4",
+    "prettier-plugin-solidity": "^1.3.1",
     "solhint": "^3.6.2"
   },
   "keywords": [

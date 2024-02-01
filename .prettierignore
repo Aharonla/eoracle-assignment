@@ -4,6 +4,8 @@ cache
 coverage
 node_modules
 out
+lib
+docs
 
 # files
 *.env
@@ -15,3 +17,4 @@ lcov.info
 package-lock.json
 pnpm-lock.yaml
 yarn.lock
+{src,test,script}/**/*.sol

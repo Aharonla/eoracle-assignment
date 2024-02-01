@@ -1,15 +1,14 @@
 # Roles
-**Inherits:**
-IRoles, AccessControlUpgradeable
 
+**Inherits:** IRoles, AccessControlUpgradeable
 
 ## State Variables
+
 ### STAKER_ROLE
 
 ```solidity
 bytes32 public constant STAKER_ROLE = keccak256("STAKER_ROLE");
 ```
-
 
 ### roles
 
@@ -21,13 +20,11 @@ mapping(bytes32 role => bool isAllowed) private roles;
 
 ### onlyAdmin
 
-
 ```solidity
 modifier onlyAdmin();
 ```
 
 ### existingRole
-
 
 ```solidity
 modifier existingRole(bytes32 _role);
@@ -37,8 +34,7 @@ modifier existingRole(bytes32 _role);
 
 ### grantRole
 
-*Overrides AccessControl's `grantRole` function to allow only internal use of _grantRole*
-
+_Overrides AccessControl's `grantRole` function to allow only internal use of \_grantRole_
 
 ```solidity
 function grantRole(bytes32, address) public pure override;
@@ -46,32 +42,28 @@ function grantRole(bytes32, address) public pure override;
 
 ### addRole
 
-*Adds role to allowed roles*
-
+_Adds role to allowed roles_
 
 ```solidity
 function addRole(bytes32 _role) external onlyAdmin;
 ```
+
 **Parameters**
 
-|Name|Type|Description|
-|----|----|-----------|
-|`_role`|`bytes32`|The role to add|
-
+| Name    | Type      | Description     |
+| ------- | --------- | --------------- |
+| `_role` | `bytes32` | The role to add |
 
 ### removeRole
 
-*Removes role from allowed roles*
-
+_Removes role from allowed roles_
 
 ```solidity
 function removeRole(bytes32 _role) external onlyAdmin existingRole(_role);
 ```
+
 **Parameters**
 
-|Name|Type|Description|
-|----|----|-----------|
-|`_role`|`bytes32`|The role to remove|
-
-
-
+| Name    | Type      | Description        |
+| ------- | --------- | ------------------ |
+| `_role` | `bytes32` | The role to remove |
