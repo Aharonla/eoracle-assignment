@@ -305,7 +305,9 @@ contract StakeManagerTest is PRBTest, StdCheats {
 
     function test_Slash(address staker, uint128 amount, uint64 time) public payable {
         uint128 registrationDepositAmount = 100;
-        vm.assume(time < type(uint64).max - block.timestamp);
+         // initially vm.assume(time < type(uint64).max - block.timestamp)
+         // but this is not supported by the VM (65536 allowed)
+        vm.assume(time < 3600);
         uint64 registrationWaitTime = time;
         vm.assume(amount <= registrationDepositAmount);
         vm.assume(staker != address(this));
