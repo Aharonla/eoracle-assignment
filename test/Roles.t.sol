@@ -2,10 +2,8 @@
 pragma solidity >=0.8.23 <0.9.0;
 
 import { PRBTest } from "@prb/test/src/PRBTest.sol";
-import { console2 } from "forge-std/console2.sol";
 import { StdCheats } from "forge-std/StdCheats.sol";
 import { ERC1967Proxy } from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
-import { ERC1967Utils } from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Utils.sol";
 
 import { StakeManager } from "../src/StakeManager.sol";
 

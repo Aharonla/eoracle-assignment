@@ -121,7 +121,8 @@ contract StakeManager is Initializable, IStakeManager, Roles, UUPSUpgradeable {
         ) {
             revert NotEnoughFunds(
                 _msgSender(),
-                (stakeManagerStorage.stakers[_msgSender()].numRoles + 1) * stakeManagerStorage.registrationDepositAmount,
+                (stakeManagerStorage.stakers[_msgSender()].numRoles + 1) 
+                * stakeManagerStorage.registrationDepositAmount,
                 stakeManagerStorage.stakers[_msgSender()].stake
             );
         }
