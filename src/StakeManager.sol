@@ -198,7 +198,7 @@ contract StakeManager is Initializable, IStakeManager, Roles, UUPSUpgradeable {
      * - `amount` is higher than or equal the staker's funds
      */
     function slash(address staker, uint128 amount) external onlyAdmin {
-        if (stakeManagerStorage.stakers[staker].stake <= amount) {
+        if (stakeManagerStorage.stakers[staker].stake < amount) {
             revert NotEnoughFunds(staker, amount, stakeManagerStorage.stakers[staker].stake);
         }
         stakeManagerStorage.stakers[staker].stake -= amount;
