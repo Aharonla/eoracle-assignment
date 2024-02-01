@@ -8,6 +8,7 @@ import { StakeManager } from "../src/StakeManager.sol";
 
 contract DeployProxy is Script {
     error NoImplementationAddress();
+
     function run() public {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         address _implementation = 0xD434D9f8293Be6c473FA55D1103103b83197225E; // Replace with your implementation
@@ -15,7 +16,7 @@ contract DeployProxy is Script {
         vm.startBroadcast(deployerPrivateKey);
 
         if (_implementation == address(0)) {
-            revert(NoImplementationAddress());
+            revert NoImplementationAddress();
         }
         bytes memory data = abi.encode(StakeManager(_implementation).initialize.selector);
 
