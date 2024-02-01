@@ -6,7 +6,7 @@ import { console2 } from "forge-std/console2.sol";
 import { StdCheats } from "forge-std/StdCheats.sol";
 import { ERC1967Proxy } from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import { ERC1967Utils } from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Utils.sol";
-import { Upgrades, Options } from "openzeppelin-foundry-upgrades/Upgrades.sol";
+import { Upgrades } from "openzeppelin-foundry-upgrades/Upgrades.sol";
 
 import { StakeManager } from "../src/StakeManager.sol";
 
@@ -49,9 +49,7 @@ contract StakeManagerTest is PRBTest, StdCheats {
     function test_Upgrade() public {
         uint128 registrationDepositAmount = 100;
         uint64 registrationWaitTime = 3600;
-        Options memory opts;
-        opts.unsafeSkipAllChecks = true;
-        Upgrades.upgradeProxy(address(proxy), "StakeManagerV2.sol:StakeManagerV2", "", opts);
+        Upgrades.upgradeProxy(address(proxy), "StakeManagerV2.sol", "");
         vm.expectEmit(false, false, false, false);
         emit FakeEvent();
         stakeManager.setConfiguration(registrationDepositAmount, registrationWaitTime);
