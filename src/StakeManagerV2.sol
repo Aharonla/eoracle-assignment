@@ -125,8 +125,7 @@ contract StakeManagerV2 is Initializable, IStakeManager, Roles, UUPSUpgradeable 
         ) {
             revert NotEnoughFunds(
                 _msgSender(),
-                (stakeManagerStorage.stakers[_msgSender()].numRoles + 1)
-                * stakeManagerStorage.registrationDepositAmount,
+                (stakeManagerStorage.stakers[_msgSender()].numRoles + 1) * stakeManagerStorage.registrationDepositAmount,
                 stakeManagerStorage.stakers[_msgSender()].stake
             );
         }
@@ -223,6 +222,7 @@ contract StakeManagerV2 is Initializable, IStakeManager, Roles, UUPSUpgradeable 
         emit Withdraw(returnValue);
         payable(_msgSender()).transfer(returnValue);
     }
+
     // solhint-disable-next-line no-empty-blocks
     function _authorizeUpgrade(address newImplementation) internal override onlyAdmin { }
 }
