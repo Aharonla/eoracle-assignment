@@ -4,6 +4,10 @@ coverage
 node_modules
 out
 docs
+lib/forge-std
+lib/openzeppelin-contracts
+lib/openzeppelin-contracts-upgradeable
+lib/openzeppelin-foundry-upgrades
 
 # files
 *.env
