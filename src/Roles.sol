@@ -5,6 +5,7 @@ import { AccessControlUpgradeable } from "@openzeppelin/contracts-upgradeable/ac
 import { IRoles } from "./IRoles.sol";
 
 contract Roles is IRoles, AccessControlUpgradeable {
+    uint256 fake;
     bytes32 public constant STAKER_ROLE = keccak256("STAKER_ROLE");
 
     mapping(bytes32 role => bool isAllowed) private roles;
